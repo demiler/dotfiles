@@ -77,8 +77,15 @@ plugins=(
 	git
 	zsh-syntax-highlighting
 	zsh-autosuggestions
+  zsh-snippets
 )
 
+
+# Load Git completion
+zstyle ':completion:*:*:git:*' script ~/.zsh/git-completion.bash
+fpath=(~/.zsh $fpath)
+
+autoload -Uz compinit && compinit
 source $ZSH/oh-my-zsh.sh
 
 # User configuration
@@ -106,5 +113,6 @@ source $ZSH/oh-my-zsh.sh
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
-source /home/demiler/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-source /home/demiler/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+sleep .1s
+bindkey "^n" snippet-expand
+snippet-add gh "https://github.com/"

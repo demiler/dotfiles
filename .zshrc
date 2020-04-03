@@ -3,6 +3,7 @@ alias config='/usr/bin/git --git-dir=$HOME/dotfiles/ --work-tree=$HOME'
 
 #If you come from bash you might have to change your $PATH.
 export PATH=$PATH:"/home/demiler/bin"
+export PAGER=most
 
 # Path to your oh-my-zsh installation.
 export ZSH="/home/demiler/.oh-my-zsh"

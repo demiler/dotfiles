@@ -1,9 +1,16 @@
+echo $(( $(cat ~/bin/data/termcntr.data) + 1 )) > ~/bin/data/termcntr.data
+
+alias vimrc="nvim ~/.config/nvim/init.vim"
+alias cvim="/usr/bin/vim"
+alias vim=nvim
+alias cdb='cd ..'
 alias yd=yandex-disk
 alias config='/usr/bin/git --git-dir=$HOME/dotfiles/ --work-tree=$HOME'
+alias calc="python3 -q"
 
 #If you come from bash you might have to change your $PATH.
 export PATH=$PATH:"/home/demiler/bin"
-export PAGER=most
+#export PAGER=most
 
 # Path to your oh-my-zsh installation.
 export ZSH="/home/demiler/.oh-my-zsh"

@@ -1,13 +1,9 @@
-"russian keybind
 set keymap=russian-jcukenwin
 set iminsert=0
 set imsearch=0
-highlight lCursor guifg=NONE
 
-"little changes
-set showcmd
-set tabstop=2 shiftwidth=2 softtabstop=2
 set expandtab
+set tabstop=2 shiftwidth=2 softtabstop=2
 syntax on
 filetype plugin indent on
 set number
@@ -23,8 +19,7 @@ nmap <C-j> gj
 nmap <C-k> gk
 set splitbelow
 set splitright
-set hlsearch
-
+:set guicursor=n-v-c-sm:block,i-ci-ve:hor20,r-cr-o:hor20
 
 "functions
 function SetAsmOptions()
@@ -70,13 +65,6 @@ let g:airline_theme = 'base16_colors'
 "let g:airline_theme = 'violet'
 "let g:airline_theme = 'base16'
 
-"vimtex setup
-let g:tex_flavor='latex'
-let g:vimtex_view_method='zathura'
-let g:vimtex_quickfix_mode = 0
-"set conceallevel=1
-let g:tex_conceal = 'abdmg'
-
 "snipset setup
 let g:UltiSnipsExpandTrigger="<tab>"
 let g:UltiSnipsJumpForwardTrigger="<c-d>"
@@ -84,12 +72,4 @@ let g:UltiSnipsJumpBackwardTrigger="<c-e>"
 let g:UltiSnipsSnippetDirectories = ['/home/demiler/.vim/ultisnips']
 let g:UltiSnipsEditSplit="vertical"
 
-autocmd BufRead,BufNewFile *.i3rc set filetype=i3 
-
-let g:clang_library_path='/usr/lib/llvm-6.0/lib'
-
-"let g:XkbSwitchEnabled = 1
-"let g:XkbSwitchLib = "/usr/lib/libxkbswitch.so"
-""echo libcall(g:XkbSwitchLib, 'Xkb_Switch_getXkbLayout', '')
-"call libcall(g:XkbSwitchLib, 'Xkb_Switch_setXkbLayout', 'us')
-
+autocmd VimLeave * set guicursor=a:hor20

@@ -1,11 +1,17 @@
 #!/bin/sh
 helpmsg() {
   echo "Simple wrap around gcc compiler for C files.
+Compiles your C files and can run them, pipe data into them,
+  test them, watch them changing and auto apply some flags.
+
 Usage: bgcc [-f] \e[4mfile\e[0m [-rpgwsjmahe] [-d \e[4mdir\e[0m] [-o \e[4mfile\e[0m] [-i \e[4mfile\e[0m]
   -f\tFile name
   -r\tRun if compile
   -i\tPipe data from file
   -t\tRun test from file
+  -I\tHide test input
+  -D\tDont trim test data
+  -A\tDont trim test answer
   -T\tShow test file structure
   -W\tWatch file
   -d\tOutput dir (build by default)
@@ -82,8 +88,11 @@ performTest() {
   [ $testId -ne 0 ] && echo
   printNiceTestBound $testId
 
-  [ $dontTrim -eq 0 ] && 
-    data=$(echo "$1" | sed "s/^ *// ; s/ *$//") &&
+  data="$1"
+  ans="$2"
+  [ $dontTrimData -eq 0 ] && 
+    data=$(echo "$1" | sed "s/^ *// ; s/ *$//")
+  [ $dontTrimAns -eq 0 ] && 
     ans=$(echo "$2" | sed "s/^ *// ; s/ *$//")
 
   [ $hideData -eq 0 ] && echo "$data\n\e[33mResult:\e[0m"
@@ -111,8 +120,6 @@ runTests() {
   lineNum=0
   buf=''
   testId=0
-  dontTrim=0
-  hideData=0
   program="$dir/$output"
 
   while IFS= read line; do
@@ -172,6 +179,9 @@ msg=1
 pipeInp=""
 testFile=""
 flags=""
+dontTrimData=0
+dontTrimAns=0
+hideData=0
 
 if [ $# -lt 1 ]; then
   helpmsg
@@ -197,6 +207,9 @@ while [ ! -z "$1" ]; do
       -i) [ ! -z "$testFile" ] && error "Flags i and t are incomp!"; pipeInp="$2"; shift;;
       -t) [ ! -z "$pipeInp" ] && error "Flags i and t are incomp!"; testFile="$2"; shift;;
       -T) showTestFileStruct; exit 0;;
+      -I) hideData=1;;
+      -D) dontTrimData=1;;
+      -A) dontTrimAns=1;;
       -W) watch=1;;
       -e) errorcode; exit 0;;
       -s) msg=0;;
@@ -205,7 +218,7 @@ while [ ! -z "$1" ]; do
       -j) flags="$flags $EJUDGE_FLAGS";;
       --) flags="$flgas""$(echo "$@" | awk -F '--' '{print $2}')"; break 2;;
       -*) warning "unknown flag '$arg'!";;
-       *) file="$1";;
+       *) [ ! -z "$file" ] && warning "input file overwritten!"; file="$1";;
     esac
   done
   shift
@@ -233,7 +246,7 @@ if [ $warnings -eq 1 ]; then
   fi
 
   if [ "$ext" != "c" ]; then 
-    warning "not a C extension!" && read -p "Continue? [y/N] " choose
+    warning "$file not a C extension!" && read -p "Continue? [y/N] " choose
     [ -z $choose ] && choose="n"
     [ "$choose" != "y" ] && msg "No" && exit 4 || msg "Yes" 
   fi

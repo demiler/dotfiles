@@ -1,0 +1,265 @@
+#!/bin/sh
+helpmsg() {
+  echo "Simple wrap around gcc compiler for C files.
+Usage: bgcc [-f] \e[4mfile\e[0m [-rpgwsjmahe] [-d \e[4mdir\e[0m] [-o \e[4mfile\e[0m] [-i \e[4mfile\e[0m]
+  -f\tFile name
+  -r\tRun if compile
+  -i\tPipe data from file
+  -t\tRun test from file
+  -T\tShow test file structure
+  -W\tWatch file
+  -d\tOutput dir (build by default)
+  -o\tSet output file
+  -p\tOutput files in current dir
+  -g\tCompile with debug
+  -w\tIgnore script warnings
+  -s\tNo additional script messages
+  -j\tUse ejudge flags
+  -m\tUse math lib
+  -a\tUse 32 arch
+  -h\tDisplay this message
+  -e\tScript error codes
+  --\tPass args to gcc compiler
+  "
+}
+errorcode() {
+  echo "Error codes:
+    0\tEverything is ok
+    1\tNo input file
+    2\tFile not found
+    3\tDirectory not found
+    4\tUser warning decline
+    5\tNo pipe file found
+  "
+}
+showTestFileStruct() {
+  echo "Test file structure:
+  --TEST
+  put data here
+  ...
+  --ANSWER [optional]
+  put ans here
+  ...
+  --
+
+  and so on...
+  "
+}
+error() {
+  echo "\e[31mError\e[0m: $1"
+  exit $2
+}
+warning() {
+  [ $warnings -eq 1 ] && echo "\e[33mWarning\e[37m: $1" 
+  return 0
+}
+msg() {
+  [ $msg -eq 1 ] && echo "$1"
+  return 0
+}
+
+################ TESTER ################ 
+#test structure:
+#   |--Test
+#   |datadata
+#   |datadata
+#   |--Answer [optional]
+#   |datadata
+#   |--
+
+printNiceTestBound() {
+  width=$(tput cols)
+  title="|Test $1|"
+  countOfSymbols=$(( ($width - ${#title}) / 2 ));
+  bound=""
+  for i in $(seq 1 $countOfSymbols); do bound=$bound'='; done
+  title=$(echo $bound$title$bound)
+  for i in $(seq 1 $(( $width - ${#title} ))); do printf '='; done
+  echo $title
+}
+
+performTest() {
+  [ $testId -ne 0 ] && echo
+  printNiceTestBound $testId
+
+  [ $dontTrim -eq 0 ] && 
+    data=$(echo "$1" | sed "s/^ *// ; s/ *$//") &&
+    ans=$(echo "$2" | sed "s/^ *// ; s/ *$//")
+
+  [ $hideData -eq 0 ] && echo "$data\n\e[33mResult:\e[0m"
+  timeStart="$(date +%s%N)"
+  progOutput=$(echo "$data" | $program | tee /dev/fd/2)
+  timeEnd="$(date +%s%N)"
+
+  [ "$(printf "$progOutput" | tail -c 1)" ] && echo
+
+  takingTime=$(echo "scale=2; ($timeEnd - $timeStart) / 1000000" | bc -l)
+  echo "\e[36mTime:\e[0m" $takingTime"ms"
+
+  if [ ! -z "$ans" ]; then 
+    [ "$ans" = "$progOutput" ] && 
+      echo "\e[32mCorrect\e[0m" || echo "\e[31mIncorrect\e[0m"
+  fi
+  testId=$(($testId + 1))
+}
+
+runTests() {
+  #0 - waiting for test
+  #1 - reading test data
+  #2 - reading answer
+  curStatus=0
+  lineNum=0
+  buf=''
+  testId=0
+  dontTrim=0
+  hideData=0
+  program="$dir/$output"
+
+  while IFS= read line; do
+    lineNum=$(($lineNum + 1))
+    case "$line" in
+      --TEST*)
+        [ $curStatus -ne 0 ] && warning "Unexpected --Test on line $lineNum"
+        [ $curStatus -eq 0 ] && curStatus=1
+        buf='';;
+      --ANSWER*)
+        [ $curStatus -ne 1 ] && warning "Unexpected --Answer on line $lineNum"
+        [ $curStatus -eq 1 ] && testData="$buf" && curStatus=2
+        buf='';;
+      --|--\ *)
+        [ $curStatus -eq 0 ] && warning "Unexpected end of test on line $lineNum"
+        [ $curStatus -eq 1 ] && testData="$buf"
+        [ $curStatus -eq 2 ] && testAns="$buf"
+        performTest "$testData" "$testAns"
+        testData=''
+        testAns=''
+        curStatus=0;;
+      *)
+        [ -z "$buf" ] && buf="$line" || buf="$buf\n$line";;
+    esac
+  done < "$testFile"
+
+  [ $curStatus -eq 1 ] && testData="$buf"
+  [ $curStatus -eq 2 ] && testAns="$buf"
+  [ $curStatus -ne 0 ] && performTest "$testData" "$testAns"
+}
+################ TESTER END ################ 
+
+runProgram() {
+  if [ ! -z "$pipeInp" ]; then
+    msg "Piping data from '$pipeInp'" 
+    cat "$pipeInp" | "$dir/$output"
+    retval=$?
+    [ $retval -ne 0 ] && warning "Program returned non-zero value!" && exit $retval
+  else if [ ! -z "$testFile" ]; then
+    msg "Taking tests from '$testFile'" 
+    runTests
+  else
+    "$dir/$output"
+    retval=$?
+    [ $retval -ne 0 ] && warning "Program returned non-zero value!" && exit $retval
+  fi fi
+}
+
+EJUDGE_FLAGS="-O2 -std=gnu11 -Wall -Werror -Wno-pointer-sign -Wformat -Wformat-overflow -Wformat-security -Wnull-dereference -Wignored-qualifiers -Wshift-negative-value -Wswitch-default -Wduplicated-branches -Wduplicated-branches -Wfloat-equal -Wshadow -Wpointer-arith -Wpointer-compare -Wtype-limits -Wwrite-strings -Wdangling-else -Wempty-body -Wlogical-op -Wstrict-prototypes -Wold-style-declaration -Wold-style-definition -Wmissing-parameter-type -Wmissing-field-initializers -Wnested-externs -Wvla-larger-than=4096 -lm"
+run=0
+warnings=1
+watch=0
+dir="build"
+file=""
+output=""
+msg=1
+pipeInp=""
+testFile=""
+flags=""
+
+if [ $# -lt 1 ]; then
+  helpmsg
+  exit;
+fi
+
+while [ ! -z "$1" ]; do
+  args="$1"
+  [ $(echo "$1" | wc -m) -gt 3 ] &&\
+    args="$(echo "$1" | fold -w1 | grep -v '-' | sed 's/^/-/')" &&\
+    [ "$(echo $1 | fold -w1 | head -1)" != "-" ] && args="$1"
+
+  for arg in $args; do
+    case "$arg" in
+      -h) helpmsg; exit 0;;
+      -r) run=1;;
+      -d) [ "$dir" != "build" ] && warning "flag '-p' overwritten by '-d' flag!"; dir="$2"; shift;;
+      -p) [ "$dir" != "build" ] && warning "flag '-d' overwritten by '-p' flag!"; dir=".";;
+      -f) file="$2"; shift;;
+      -g) flags="$flags -g";;
+      -w) warnings=0;;
+      -o) output="$2"; shift;;
+      -i) [ ! -z "$testFile" ] && error "Flags i and t are incomp!"; pipeInp="$2"; shift;;
+      -t) [ ! -z "$pipeInp" ] && error "Flags i and t are incomp!"; testFile="$2"; shift;;
+      -T) showTestFileStruct; exit 0;;
+      -W) watch=1;;
+      -e) errorcode; exit 0;;
+      -s) msg=0;;
+      -m) flags="$flags -lm";;
+      -a) flags="$flags -m32";;
+      -j) flags="$flags $EJUDGE_FLAGS";;
+      --) flags="$flgas""$(echo "$@" | awk -F '--' '{print $2}')"; break 2;;
+      -*) warning "unknown flag '$arg'!";;
+       *) file="$1";;
+    esac
+  done
+  shift
+done
+
+[ -z $file ] && error "No input file!" 1
+[ ! -f "$file" ] && error "File $file not found!" 2
+[ ! -z "$pipeInp" ] && [ ! -f "$pipeInp" ] && error "Input file not found!" 5
+[ $watch -eq 1 ] && [ -z "$(which 'inotifywait')" ] &&
+  error "inotifywait is not installed. Cant watch for a file" 6
+
+[ "$dir" = "build" ] && [ ! -d "build" ] && mkdir "build"
+[ ! -d "$dir" ] && error "Directory \"$dir\" doesn't exists!" 3
+
+ext=$(echo $file | cut -d'.' -f2)
+name=$(echo $file | cut -d'.' -f1)
+[ "$name" = "$file" ] && name="$name"EXT
+[ -z $output ] && output="$name"
+
+if [ $warnings -eq 1 ]; then
+  if [ -z $ext ]; then
+    warning "no file extension!" && read -p "Continue? [y/N] " choose
+    [ -z $choose ] && choose="n"
+    [ "$choose" != "y" ] && msg "No" && exit 4 || msg "Yes"
+  fi
+
+  if [ "$ext" != "c" ]; then 
+    warning "not a C extension!" && read -p "Continue? [y/N] " choose
+    [ -z $choose ] && choose="n"
+    [ "$choose" != "y" ] && msg "No" && exit 4 || msg "Yes" 
+  fi
+fi
+
+gcc $flags $file -o "$dir/$output"
+[ $? -ne 0 ] && exit
+clearScreen=1
+
+if [ $run -eq 1 ]; then
+  msg "$name compiled!"
+
+  runProgram
+
+  if [ $watch -eq 1 ]; then
+    while event="$(inotifywait -q "$file")"; do
+      gcc $flags $file -o "$dir/$output"
+      [ $? -ne 0 ] && exit
+
+      [ $clearScreen -eq 1 ] && clear
+      echo "\e[35mGot $event. Restarting...\e[0m"
+      runProgram
+    done
+  fi
+
+fi
+exit 0
+
+

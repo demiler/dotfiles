@@ -9,10 +9,13 @@ Usage: bgcc [-f] \e[4mfile\e[0m [-rpgwsjmahe] [-d \e[4mdir\e[0m] [-o \e[4mfile\e
   -r\tRun if compile
   -i\tPipe data from file
   -t\tRun test from file
-  -I\tHide test input
-  -D\tDont trim test data
-  -A\tDont trim test answer
-  -T\tShow test file structure
+   -I\tHide test input
+   -D\tDont trim test data
+   -A\tDont trim test answer
+   -T\tShow test file structure
+   -F\tShow only failed tests
+  -S n\tCompile with sanitizer level n
+  -L\tPrint sanitizers levels
   -W\tWatch file
   -d\tOutput dir (build by default)
   -o\tSet output file
@@ -23,9 +26,11 @@ Usage: bgcc [-f] \e[4mfile\e[0m [-rpgwsjmahe] [-d \e[4mdir\e[0m] [-o \e[4mfile\e
   -j\tUse ejudge flags
   -m\tUse math lib
   -a\tUse 32 arch
+  -l\tUse linked libraries
   -h\tDisplay this message
   -e\tScript error codes
-  --\tPass args to gcc compiler
+  -P\tUse g++ instead of gcc
+  --\tPass args to your program
   "
 }
 errorcode() {
@@ -36,6 +41,10 @@ errorcode() {
     3\tDirectory not found
     4\tUser warning decline
     5\tNo pipe file found
+    6\tNo test file found
+    7\tinotifywait is not installed
+    8\tIncompatible flags
+    9\tForgotten argument
   "
 }
 showTestFileStruct() {
@@ -63,6 +72,60 @@ msg() {
   [ $msg -eq 1 ] && echo "$1"
   return 0
 }
+printSanitizers() {
+  echo "Sanitizers levels:
+0 - Addresses violation, memory leak
+address pointer-compare pointer-subtract leak
+
+1 - Thread sanitizer
+thread
+
+2 - Undefined behavior sanitizer
+undefined: shift shift-exponent shift-base integer-divide-by-zero
+unreachable vla-bound null return signed-integer-overflow
+bounds bounds-strict alignment object-size float-divide-by-zero
+float-cast-overflow float-cast-overflow nonnull-attribute
+bool enum vptr pointer-overflow builtin
+
+3 - Overflow UB sanitizer
+signed-integer-overflow float-cast-overflow pointer-overflow
+shift shift-exponent shift-base
+
+4 - Enable all sanitizers (except thread)
+address pointer-compare pointer-subtract leak
+undefined: shift shift-exponent shift-base integer-divide-by-zero
+unreachable vla-bound null return signed-integer-overflow
+bounds bounds-strict alignment object-size float-divide-by-zero
+float-cast-overflow float-cast-overflow nonnull-attribute
+bool enum vptr pointer-overflow builtin
+signed-integer-overflow float-cast-overflow pointer-overflow
+shift shift-exponent shift-base
+  "
+}
+getSanitizer() {
+  printf "-"
+  printf "fsanitize="
+  case "$1" in
+    0) 
+      printf "address,pointer-compare,pointer-subtract,leak";;
+    1) printf "thread";;
+    2) printf "undefined";;
+    3)
+      printf "signed-integer-overflow,float-cast-overflow,pointer-overflow,"
+      printf "shift,shift-exponent,shift-base"
+      ;;
+    4)
+      printf "address,pointer-compare,pointer-subtract,leak,"
+      printf "shift,shift-exponent,shift-base,integer-divide-by-zero,"
+      printf "unreachable,vla-bound,null,return,signed-integer-overflow,"
+      printf "bounds,bounds-strict,alignment,object-size,float-divide-by-zero,"
+      printf "float-cast-overflow,float-cast-overflow,nonnull-attribute,"
+      printf "bool,enum,vptr,pointer-overflow,builtin,"
+      printf "signed-integer-overflow,float-cast-overflow,pointer-overflow,"
+      printf "shift,shift-exponent,shift-base"
+      ;;
+  esac
+}
 
 ################ TESTER ################ 
 #test structure:
@@ -83,10 +146,17 @@ printNiceTestBound() {
   for i in $(seq 1 $(( $width - ${#title} ))); do printf '='; done
   echo $title
 }
+killer() {
+  sleep 10
+  kill -9 $1 > /dev/null 2>&1
+  [ "$?" -eq 0 ] && echo "\n\e[31mProcces killed, it took more than 10s.\e[0m"
+}
 
 performTest() {
-  [ $testId -ne 0 ] && echo
-  printNiceTestBound $testId
+  if [ "$onlyFailed" -ne 1 ]; then
+    [ "$testId" -ne 0 ] && echo
+    printNiceTestBound $testId
+  fi
 
   data="$1"
   ans="$2"
@@ -95,21 +165,58 @@ performTest() {
   [ $dontTrimAns -eq 0 ] && 
     ans=$(echo "$2" | sed "s/^ *// ; s/ *$//")
 
-  [ $hideData -eq 0 ] && echo "$data\n\e[33mResult:\e[0m"
-  timeStart="$(date +%s%N)"
-  progOutput=$(echo "$data" | $program | tee /dev/fd/2)
-  timeEnd="$(date +%s%N)"
+  [ "$onlyFailed" -ne 1 ] &&
+    [ $hideData -eq 0 ] && echo "$data\n\e[33mResult:\e[0m"
 
-  [ "$(printf "$progOutput" | tail -c 1)" ] && echo
+  timeStart="$(date +%s%N)"
+
+  if [ "$onlyFailed" -ne 1 ]; then
+    echo "$data" | $program $progArgs | tee $tmpfile &
+    pidOfProg=$!
+    killer $pidOfProg &
+    pidOfKiller=$!
+    wait $pidOfProg
+    kill -9 $pidOfKiller > /dev/null 2>&1
+  else
+    echo "$data" | $program $progArgs > $tmpfile
+  fi
+
+  progOutput="$(cat $tmpfile)"
+
+  timeEnd="$(date +%s%N)"
+  
+  [ "$onlyFailed" -ne 1 ] &&
+    [ "$(printf "$progOutput" | tail -c 1)" ] && echo
 
   takingTime=$(echo "scale=2; ($timeEnd - $timeStart) / 1000000" | bc -l)
-  echo "\e[36mTime:\e[0m" $takingTime"ms"
+
+  [ "$onlyFailed" -ne 1 ] &&
+    echo "\e[36mTime:\e[0m" $takingTime"ms"
+
+  testId=$(($testId + 1))
 
   if [ ! -z "$ans" ]; then 
-    [ "$ans" = "$progOutput" ] && 
-      echo "\e[32mCorrect\e[0m" || echo "\e[31mIncorrect\e[0m"
+    [ $dontTrimAns -eq 0 ] && 
+      progOutput=$(echo "$progOutput" | sed "s/^ *// ; s/ *$//")
+
+    if [ "$ans" = "$progOutput" ]; then
+      [ "$onlyFailed" -ne 1 ] &&
+        echo "\e[32mCorrect\e[0m" 
+      return 1
+    else
+      if [ "$onlyFailed" -eq 1 ]; then
+        echo
+        printNiceTestBound $testId
+        [ $hideData -eq 0 ] && echo "$data\n\e[33mResult:\e[0m"
+        echo "$progOutput"
+      fi
+
+      echo "\e[31mIncorrect\e[0m"
+      [ "$onlyFailed" -eq 1 ] &&
+        echo "$ans"
+      return 0
+    fi
   fi
-  testId=$(($testId + 1))
 }
 
 runTests() {
@@ -120,7 +227,10 @@ runTests() {
   lineNum=0
   buf=''
   testId=0
+  testPassed=0
+  testTotal=0
   program="$dir/$output"
+  tmpfile=$(mktemp /tmp/abc-script.XXXXXX)
 
   while IFS= read line; do
     lineNum=$(($lineNum + 1))
@@ -138,6 +248,10 @@ runTests() {
         [ $curStatus -eq 1 ] && testData="$buf"
         [ $curStatus -eq 2 ] && testAns="$buf"
         performTest "$testData" "$testAns"
+        passed=$?
+        [ ! -z "$testAns" ] && 
+          testPassed=$(($testPassed + $passed)) &&
+          testTotal=$(($testTotal + 1))
         testData=''
         testAns=''
         curStatus=0;;
@@ -148,45 +262,76 @@ runTests() {
 
   [ $curStatus -eq 1 ] && testData="$buf"
   [ $curStatus -eq 2 ] && testAns="$buf"
-  [ $curStatus -ne 0 ] && performTest "$testData" "$testAns"
+  if [ $curStatus -ne 0 ]; then
+    performTest "$testData" "$testAns"
+    passed=$?
+    [ ! -z "$testAns" ] && 
+      testPassed=$(($testPassed + $passed)) &&
+      testTotal=$(($testTotal + 1))
+  fi
+
+  if [ "$testTotal" -ne 0 ]; then
+    printf '\e[34mSummary: '
+    if [ $testPassed -ne $testTotal ]; then
+      echo "$testPassed/$testTotal tests passed."
+      echo "\e[31m$(($testTotal - $testPassed)) tests failed!\e[0m"
+    else
+      echo "\e[32m$testPassed/$testTotal tests passed.\e[0m"
+    fi
+  fi
+  rm $tmpfile
 }
 ################ TESTER END ################ 
 
 runProgram() {
   if [ ! -z "$pipeInp" ]; then
     msg "Piping data from '$pipeInp'" 
-    cat "$pipeInp" | "$dir/$output"
+    cat "$pipeInp" | "$dir/$output" $progArgs
     retval=$?
     [ $retval -ne 0 ] && warning "Program returned non-zero value!" && exit $retval
   else if [ ! -z "$testFile" ]; then
     msg "Taking tests from '$testFile'" 
     runTests
   else
-    "$dir/$output"
+    #echo "$progArgs"
+    #echo "\"$dir/$output\" $progArgs"
+    sh -c "\"$dir/$output\" $progArgs"
     retval=$?
-    [ $retval -ne 0 ] && warning "Program returned non-zero value!" && exit $retval
+    [ $retval -ne 0 ] && warning "Program returned non-zero ($retval) value!" && exit $retval
   fi fi
 }
 
-EJUDGE_FLAGS="-O2 -std=gnu11 -Wall -Werror -Wno-pointer-sign -Wformat -Wformat-overflow -Wformat-security -Wnull-dereference -Wignored-qualifiers -Wshift-negative-value -Wswitch-default -Wduplicated-branches -Wduplicated-branches -Wfloat-equal -Wshadow -Wpointer-arith -Wpointer-compare -Wtype-limits -Wwrite-strings -Wdangling-else -Wempty-body -Wlogical-op -Wstrict-prototypes -Wold-style-declaration -Wold-style-definition -Wmissing-parameter-type -Wmissing-field-initializers -Wnested-externs -Wvla-larger-than=4096 -lm"
-run=0
-warnings=1
-watch=0
-dir="build"
-file=""
-output=""
-msg=1
-pipeInp=""
-testFile=""
-flags=""
-dontTrimData=0
-dontTrimAns=0
-hideData=0
+############ FULL ARGS #################
+fullArgs=""
+for arg in "$@"; do
+  case "$arg" in  
+    *\ * ) fullArgs="$fullArgs '$arg'";;
+    *) fullArgs="$fullArgs $arg";;
+  esac
+done
+############ FULL ARGS #################
 
-if [ $# -lt 1 ]; then
-  helpmsg
-  exit;
-fi
+
+
+EJUDGE_FLAGS="-m32 -O2 -std=gnu11 -Wall -Werror -Wno-pointer-sign -Wformat -Wformat-overflow -Wformat-security -Wnull-dereference -Wignored-qualifiers -Wshift-negative-value -Wswitch-default -Wduplicated-branches -Wduplicated-branches -Wfloat-equal -Wshadow -Wpointer-arith -Wpointer-compare -Wtype-limits -Wwrite-strings -Wdangling-else -Wempty-body -Wlogical-op -Wstrict-prototypes -Wold-style-declaration -Wold-style-definition -Wmissing-parameter-type -Wmissing-field-initializers -Wnested-externs -Wvla-larger-than=4096 -lm"
+CC=gcc
+run=0
+msg=1
+watch=0
+file=""
+flags=""
+output=""
+warnings=1
+pipeInp=""
+hideData=0
+dir="build"
+testFile=""
+onlyFailed=0
+sanitizers=""
+dontTrimAns=0
+dontTrimData=0
+
+[ $# -lt 1 ] && helpmsg && exit 0
 
 while [ ! -z "$1" ]; do
   args="$1"
@@ -198,27 +343,66 @@ while [ ! -z "$1" ]; do
     case "$arg" in
       -h) helpmsg; exit 0;;
       -r) run=1;;
-      -d) [ "$dir" != "build" ] && warning "flag '-p' overwritten by '-d' flag!"; dir="$2"; shift;;
-      -p) [ "$dir" != "build" ] && warning "flag '-d' overwritten by '-p' flag!"; dir=".";;
+      -d) 
+        [ "$dir" != "build" ] &&
+          warning "flag '-p' overwritten by '-d' flag!"
+        dir="$2"
+        [ "$#" -le 1 ] && error "No directory provided" 9
+        shift
+        ;;
+      -p) 
+        [ "$dir" != "build" ] &&
+          warning "flag '-d' overwritten by '-p' flag!"
+        dir="."
+        ;;
       -f) file="$2"; shift;;
       -g) flags="$flags -g";;
       -w) warnings=0;;
       -o) output="$2"; shift;;
-      -i) [ ! -z "$testFile" ] && error "Flags i and t are incomp!"; pipeInp="$2"; shift;;
-      -t) [ ! -z "$pipeInp" ] && error "Flags i and t are incomp!"; testFile="$2"; shift;;
+      -i) 
+        [ ! -z "$testFile" ] &&
+          error "Flags i and t are incompatable!" 8
+        pipeInp="$2"
+        [ "$#" -le 1 ] && error "No pipe file provided" 9
+        shift
+        ;;
+      -t) 
+        [ ! -z "$pipeInp" ] &&
+          error "Flags i and t are incomp!" 8
+        testFile="$2"
+        [ "$#" -le 1 ] && error "No test file provided" 9
+        shift
+        ;;
+      -S)
+        [ "$#" -le 1 ] && error "No sanitizer level provided" 9
+        sanitizers=$(getSanitizer "$2")
+        shift
+        ;;
+      -L) printSanitizers; exit 0;;
       -T) showTestFileStruct; exit 0;;
       -I) hideData=1;;
       -D) dontTrimData=1;;
       -A) dontTrimAns=1;;
+      -F) onlyFailed=1;;
       -W) watch=1;;
+      -P) CC=g++;;
       -e) errorcode; exit 0;;
       -s) msg=0;;
       -m) flags="$flags -lm";;
       -a) flags="$flags -m32";;
+      -l) flags="$flags -ldl";;
+      -M) flags="$flags -lrt";;
       -j) flags="$flags $EJUDGE_FLAGS";;
-      --) flags="$flgas""$(echo "$@" | awk -F '--' '{print $2}')"; break 2;;
+      --) 
+        progArgs="$(echo "$fullArgs" | awk -F '--' '{print $2}')";
+        break 2
+        ;;
       -*) warning "unknown flag '$arg'!";;
-       *) [ ! -z "$file" ] && warning "input file overwritten!"; file="$1";;
+       *) 
+         [ ! -z "$file" ] &&
+           warning "input file overwritten!"
+         file="$1"
+         ;;
     esac
   done
   shift
@@ -226,9 +410,10 @@ done
 
 [ -z $file ] && error "No input file!" 1
 [ ! -f "$file" ] && error "File $file not found!" 2
-[ ! -z "$pipeInp" ] && [ ! -f "$pipeInp" ] && error "Input file not found!" 5
+[ ! -z "$pipeInp" ] && [ ! -f "$pipeInp" ] && error "Pipe file not found!" 5
+[ ! -z "$testFile" ] && [ ! -f "$testFile" ] && error "Test file not found!" 6
 [ $watch -eq 1 ] && [ -z "$(which 'inotifywait')" ] &&
-  error "inotifywait is not installed. Cant watch for a file" 6
+  error "inotifywait is not installed. Cant watch for a file" 7
 
 [ "$dir" = "build" ] && [ ! -d "build" ] && mkdir "build"
 [ ! -d "$dir" ] && error "Directory \"$dir\" doesn't exists!" 3
@@ -245,14 +430,16 @@ if [ $warnings -eq 1 ]; then
     [ "$choose" != "y" ] && msg "No" && exit 4 || msg "Yes"
   fi
 
-  if [ "$ext" != "c" ]; then 
+  if [ "$ext" != "c" ] && [ "$ext" != "cpp" ]; then 
     warning "$file not a C extension!" && read -p "Continue? [y/N] " choose
     [ -z $choose ] && choose="n"
     [ "$choose" != "y" ] && msg "No" && exit 4 || msg "Yes" 
   fi
+
 fi
 
-gcc $flags $file -o "$dir/$output"
+#msg "gcc \"$file\" -o \"$dir/$output\" $flags $sanitizers"
+$CC "$file" -o "$dir/$output" $flags $sanitizers
 [ $? -ne 0 ] && exit
 clearScreen=1
 
@@ -274,5 +461,3 @@ if [ $run -eq 1 ]; then
 
 fi
 exit 0
-
-

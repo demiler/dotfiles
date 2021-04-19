@@ -15,11 +15,12 @@ set guicursor=
 autocmd FileType * set formatoptions-=ro
 
 autocmd FileType c setlocal colorcolumn=100 tabstop=4 shiftwidth=4 softtabstop=4
+autocmd FileType cpp setlocal colorcolumn=100 tabstop=4 shiftwidth=4 softtabstop=4 cindent cino=j1,(0,ws,Ws
 autocmd FileType make call SetMakeOptions()
 autocmd FileType asm call SetAsmOptions()
 autocmd FileType txt call SetTextOptions()
 autocmd FileType tex call SetLatexOptions()
-autocmd FileType i3rc setlocal filetype=i3 
+autocmd FileType i3rc setlocal filetype=i3
 
 hi SpellBad         ctermbg=88    ctermfg=7
 hi WordUnderCursor  ctermbg=111   ctermfg=0
@@ -27,7 +28,7 @@ hi TabLineFill      ctermfg=240
 hi TabLine          ctermfg=250   ctermbg=0
 hi Folded           ctermbg=238
 hi Pmenu            ctermbg=238   ctermfg=253
-hi PmenuSel         ctermbg=245   ctermfg=0       
+hi PmenuSel         ctermbg=245   ctermfg=0
 hi PmenuSbar        ctermbg=236
 hi PmenuThumb       ctermbg=242
 hi VertSplit        ctermbg=240   ctermfg=232
@@ -42,7 +43,8 @@ nmap <C-j> gj
 nmap <C-k> gk
 nmap <Insert> "+p
 imap <Insert> <C-r>+
-nnoremap <C-K> :match WordUnderCursor /\k*\%#\k*/<CR>
+nnoremap <C-K> :%s/\s\+$//e:noh<Enter>:<C-o>
+"nnoremap <C-K> :match WordUnderCursor /\k*\%#\k*/<CR>
 nnoremap <C-left> gT
 nnoremap <C-right> gt
 "st ctrl-arrow fix
@@ -51,14 +53,28 @@ map <ESC>[1;5C <C-Right>
 
 onoremap <silent> i$ :<c-u>normal! T$vt$<cr>
 vnoremap i$ T$ot$
-onoremap <silent> a$ :<c-u>normal! F$vf$<cr> 
+onoremap <silent> a$ :<c-u>normal! F$vf$<cr>
 vnoremap a$ F$of$
 
 "functions
 function SetAsmOptions()
   set autoindent
-  set colorcolumn=80 
+  set colorcolumn=80
   set ft=nasm
+  syn match nasmSegRegister "\<r[1-3]\>"
+  syn keyword nasmDirective store
+  syn keyword nasmDirective cmpje
+  syn keyword nasmDirective cmpjn
+  syn keyword nasmDirective load
+  syn keyword nasmDirective mod
+  syn keyword nasmDirective j
+  syn keyword nasmMacro PHV
+  syn keyword nasmMacro HEADER
+  syn keyword nasmMacro PORTMASK
+  syn keyword nasmAmdInstruction halt
+  syn keyword nasmAmdInstruction exact_match
+  syn keyword nasmAmdInstruction longest_prefix_match
+  syn keyword nasmAmdInstruction hash
 endfunction
 
 function SetTextOptions()
@@ -66,7 +82,7 @@ function SetTextOptions()
   setlocal linebreak
   setlocal spell spelllang=en,ru
   "nnoremap k gk
-  "nnoremap j gj 
+  "nnoremap j gj
 endfunction
 
 function SetLatexOptions()
@@ -102,6 +118,7 @@ Plug 'justinmk/vim-syntax-extra'
 Plug 'jonsmithers/vim-html-template-literals'
 Plug 'pangloss/vim-javascript'
 Plug 'xavierd/clang_complete'
+Plug 'numirias/semshi', {'do': ':UpdateRemotePlugins'}
 "Plug 'octol/vim-cpp-enhanced-highlight'
 "Plug 'honza/vim-snippets'
 "Plug 'Valloric/YouCompleteMe'
@@ -118,7 +135,7 @@ set formatoptions-=cro
 set bg=dark
 
 
-"set statusline=\ %{mode()}\ %t\ %m\ %=%y\ ≡\ %c:%l\ %p%%\ 
+"set statusline=\ %{mode()}\ %t\ %m\ %=%y\ ≡\ %c:%l\ %p%%\
 "airline setup
 let g:airline#extensions#keymap#enabled = 0
 "let g:airline_powerline_fonts = 1

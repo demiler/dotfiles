@@ -1,7 +1,7 @@
 "common vim config setup
 set showcmd
-set tabstop=2 shiftwidth=2 softtabstop=2
-"set tabstop=4 shiftwidth=4 softtabstop=4
+"set tabstop=2 shiftwidth=2 softtabstop=2
+set tabstop=4 shiftwidth=4 softtabstop=4
 set expandtab
 syntax on
 filetype plugin indent on
@@ -108,8 +108,6 @@ call plug#begin('~/.vim/plugged')
 Plug 'vim-airline/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
 Plug 'scrooloose/nerdcommenter'
-Plug 'SirVer/ultisnips'
-Plug 'chrisbra/Colorizer'
 Plug 'tpope/vim-surround'
 Plug 'tpope/vim-repeat'
 Plug 'lyokha/vim-xkbswitch'
@@ -119,6 +117,10 @@ Plug 'jonsmithers/vim-html-template-literals'
 Plug 'pangloss/vim-javascript'
 Plug 'xavierd/clang_complete'
 Plug 'numirias/semshi', {'do': ':UpdateRemotePlugins'}
+"Plug 'w0rp/ale'
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
+"Plug 'chrisbra/Colorizer'
+"Plug 'SirVer/ultisnips'
 "Plug 'octol/vim-cpp-enhanced-highlight'
 "Plug 'honza/vim-snippets'
 "Plug 'Valloric/YouCompleteMe'
@@ -134,6 +136,9 @@ set formatoptions-=cro
 "colorscheme gruvbox
 set bg=dark
 
+"prettier settinigs
+"let b:ale_fixers = { 'javascript': ['prettier'] }
+"let g:ale_fix_on_save = 1
 
 "set statusline=\ %{mode()}\ %t\ %m\ %=%y\ ≡\ %c:%l\ %p%%\
 "airline setup
@@ -146,11 +151,11 @@ let g:airline_theme = 'base16_colors'
 "let g:airline_theme = 'base16'
 
 "snipset setup
-let g:UltiSnipsExpandTrigger="<tab>"
-let g:UltiSnipsJumpForwardTrigger="<c-d>"
-let g:UltiSnipsJumpBackwardTrigger="<c-e>"
-let g:UltiSnipsSnippetDirectories = ['/home/demiler/.vim/ultisnips']
-let g:UltiSnipsEditSplit="vertical"
+"let g:UltiSnipsExpandTrigger="<tab>"
+"let g:UltiSnipsJumpForwardTrigger="<c-d>"
+"let g:UltiSnipsJumpBackwardTrigger="<c-e>"
+"let g:UltiSnipsSnippetDirectories = ['/home/demiler/.vim/ultisnips']
+"let g:UltiSnipsEditSplit="vertical"
 
 "let g:clang_library_path = '/usr/lib/llvm-6.0/lib'
 "let g:clang_close_preview = 1

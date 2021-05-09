@@ -313,13 +313,14 @@ done
 
 
 
-EJUDGE_FLAGS="-m32 -O2 -std=gnu11 -Wall -Werror -Wno-pointer-sign -Wformat -Wformat-overflow -Wformat-security -Wnull-dereference -Wignored-qualifiers -Wshift-negative-value -Wswitch-default -Wduplicated-branches -Wduplicated-branches -Wfloat-equal -Wshadow -Wpointer-arith -Wpointer-compare -Wtype-limits -Wwrite-strings -Wdangling-else -Wempty-body -Wlogical-op -Wstrict-prototypes -Wold-style-declaration -Wold-style-definition -Wmissing-parameter-type -Wmissing-field-initializers -Wnested-externs -Wvla-larger-than=4096 -lm"
+#EJUDGE_FLAGS="-m32 -O2 -std=gnu11 -Wall -Werror -Wno-pointer-sign -Wformat -Wformat-overflow -Wformat-security -Wnull-dereference -Wignored-qualifiers -Wshift-negative-value -Wswitch-default -Wduplicated-branches -Wduplicated-branches -Wfloat-equal -Wshadow -Wpointer-arith -Wpointer-compare -Wtype-limits -Wwrite-strings -Wdangling-else -Wempty-body -Wlogical-op -Wstrict-prototypes -Wold-style-declaration -Wold-style-definition -Wmissing-parameter-type -Wmissing-field-initializers -Wnested-externs -Wvla-larger-than=4096 -lm"
+EJUDGE_FLAGS="-m32 -O2 -Wall -Werror -std=gnu++17 -lm"
 CC=gcc
 run=0
 msg=1
 watch=0
 file=""
-flags=""
+flags="-std=gnu++17"
 output=""
 warnings=1
 pipeInp=""
@@ -330,6 +331,7 @@ onlyFailed=0
 sanitizers=""
 dontTrimAns=0
 dontTrimData=0
+headCppErrors=0
 
 [ $# -lt 1 ] && helpmsg && exit 0
 
@@ -393,6 +395,13 @@ while [ ! -z "$1" ]; do
       -l) flags="$flags -ldl";;
       -M) flags="$flags -lrt";;
       -j) flags="$flags $EJUDGE_FLAGS";;
+      -H) 
+        flags="$flags -fdiagnostics-color=always";
+        if [ "$#" -le 1 ] || [ -f "$2" ]; then
+          headCppErrors=10;
+        else
+          headCppErrors=$2; shift
+        fi;;
       --) 
         progArgs="$(echo "$fullArgs" | awk -F '--' '{print $2}')";
         break 2
@@ -438,9 +447,14 @@ if [ $warnings -eq 1 ]; then
 
 fi
 
-#msg "gcc \"$file\" -o \"$dir/$output\" $flags $sanitizers"
-$CC "$file" -o "$dir/$output" $flags $sanitizers
-[ $? -ne 0 ] && exit
+#msg "$CC \"$file\" -o \"$dir/$output\" $flags $sanitizers"
+if [ $headCppErrors -ne 0 ]; then
+  errors=$($CC "$file" -o "$dir/$output" $flags $sanitizers 2>&1) 
+  [ $? -ne 0 ] && echo "$errors" | head -$headCppErrors && exit
+else
+  $CC "$file" -o "$dir/$output" $flags $sanitizers
+  [ $? -ne 0 ] && exit
+fi
 clearScreen=1
 
 if [ $run -eq 1 ]; then

@@ -1,7 +1,8 @@
 "common vim config setup
 set showcmd
-"set tabstop=2 shiftwidth=2 softtabstop=2
-set tabstop=4 shiftwidth=4 softtabstop=4
+set tabstop=2 shiftwidth=2 softtabstop=2
+"set tabstop=4 shiftwidth=4 softtabstop=4
+
 set expandtab
 syntax on
 filetype plugin indent on
@@ -10,8 +11,7 @@ set relativenumber
 set splitbelow
 set splitright
 set hlsearch
-set guicursor=
-"disable auto comment
+set guicursor= "disable auto comment
 autocmd FileType * set formatoptions-=ro
 
 autocmd FileType c setlocal colorcolumn=100 tabstop=4 shiftwidth=4 softtabstop=4
@@ -19,7 +19,7 @@ autocmd FileType cpp setlocal colorcolumn=100 tabstop=4 shiftwidth=4 softtabstop
 autocmd FileType make call SetMakeOptions()
 autocmd FileType asm call SetAsmOptions()
 autocmd FileType txt call SetTextOptions()
-autocmd FileType tex call SetLatexOptions()
+"autocmd FileType tex call SetLatexOptions()
 autocmd FileType i3rc setlocal filetype=i3
 
 hi SpellBad         ctermbg=88    ctermfg=7
@@ -55,6 +55,10 @@ onoremap <silent> i$ :<c-u>normal! T$vt$<cr>
 vnoremap i$ T$ot$
 onoremap <silent> a$ :<c-u>normal! F$vf$<cr>
 vnoremap a$ F$of$
+
+command RemoveTrailing :silent!%s/ \+$// | :noh
+command To4Spaces :silent!%s/  /    / | :noh
+
 
 "functions
 function SetAsmOptions()
@@ -110,15 +114,17 @@ Plug 'vim-airline/vim-airline-themes'
 Plug 'scrooloose/nerdcommenter'
 Plug 'tpope/vim-surround'
 Plug 'tpope/vim-repeat'
-Plug 'lyokha/vim-xkbswitch'
+"Plug 'lyokha/vim-xkbswitch'
 Plug 'lervag/vimtex'
 Plug 'justinmk/vim-syntax-extra'
 Plug 'jonsmithers/vim-html-template-literals'
 Plug 'pangloss/vim-javascript'
+Plug 'othree/jsdoc-syntax.vim'
 Plug 'xavierd/clang_complete'
 Plug 'numirias/semshi', {'do': ':UpdateRemotePlugins'}
+Plug 'neoclide/coc.nvim', {'branch': 'main'}
+Plug 'puremourning/vimspector'
 "Plug 'w0rp/ale'
-Plug 'neoclide/coc.nvim', {'branch': 'release'}
 "Plug 'chrisbra/Colorizer'
 "Plug 'SirVer/ultisnips'
 "Plug 'octol/vim-cpp-enhanced-highlight'
@@ -142,7 +148,7 @@ set bg=dark
 
 "set statusline=\ %{mode()}\ %t\ %m\ %=%y\ ≡\ %c:%l\ %p%%\
 "airline setup
-let g:airline#extensions#keymap#enabled = 0
+"let g:airline#extensions#keymap#enabled = 0
 "let g:airline_powerline_fonts = 1
 let g:airline_theme = 'base16_colors'
 
@@ -160,7 +166,7 @@ let g:airline_theme = 'base16_colors'
 "let g:clang_library_path = '/usr/lib/llvm-6.0/lib'
 "let g:clang_close_preview = 1
 
-let g:XkbSwitchIMappings = ['ru']
+"let g:XkbSwitchIMappings = ['ru']
 
 "highlight thing inside css`...` too
 let g:htl_css_templates = 1

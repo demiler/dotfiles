@@ -1,5 +1,5 @@
 concd () {
-  cd $(fd ".*" ~/contests -t d -E ".git" | fzf)
+  cd $(fd ".*" ~/contests/sem5 -t d -E ".git" | fzf)
 }
 ccd () {
   cd $(fd ".*" $1 -t d -E .git | fzf)
@@ -7,6 +7,8 @@ ccd () {
 grdir() {
   nemo "$(pwd)" 2> /dev/null &|
 }
+
+source /etc/profile.d/vte.sh
 
 export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
@@ -62,16 +64,18 @@ alias vim=nvim
 alias vimrc="vim ~/.config/nvim/init.vim"
 alias zshrc="vim ~/.zshrc"
 alias cdb='cd ..'
-alias yd=yandex-disk
 alias config='/usr/bin/git --git-dir=$HOME/dotfiles/ --work-tree=$HOME'
 alias calc="python3 -q"
-alias img='xviewer'
-alias prac='ssh s02190692@prac.cs.msu.ru'
+alias img='eog'
 alias ready="spd-say 'ready' -p -100 -r -50"
 alias cmd="fc -ln | tac | fzf | tr -d '\n' | copy"
-alias fd="fdfind"
+#alias fd="fdfind"
 alias gits="git status"
-alias lt="ls -t | head"
+alias lt="ls -t --color=always | head"
+alias gitl="git --no-pager log --oneline"
+alias gitlh="gitl --color=always | head"
+alias mpva="[ ! -d .watch_later ] && mkdir .watch_later; mpv --profile=anime ."
+alias py="python3"
 ###################| VIM MODE |###################
 bindkey -v #enable vim mode
 

@@ -1,6 +1,6 @@
 #!/bin/sh
 helpmsg() {
-  echo "Simple wrap around gcc compiler for C files.
+  echo -e "Simple wrap around gcc compiler for C files.
 Compiles your C files and can run them, pipe data into them,
   test them, watch them changing and auto apply some flags.
 
@@ -34,7 +34,7 @@ Usage: bgcc [-f] \e[4mfile\e[0m [-rpgwsjmahe] [-d \e[4mdir\e[0m] [-o \e[4mfile\e
   "
 }
 errorcode() {
-  echo "Error codes:
+  echo -e "Error codes:
     0\tEverything is ok
     1\tNo input file
     2\tFile not found
@@ -48,7 +48,7 @@ errorcode() {
   "
 }
 showTestFileStruct() {
-  echo "Test file structure:
+  echo -e "Test file structure:
   --TEST
   put data here
   ...
@@ -65,7 +65,7 @@ error() {
   exit $2
 }
 warning() {
-  [ $warnings -eq 1 ] && echo "\e[33mWarning\e[37m: $1" 
+  [ $warnings -eq 1 ] && echo "\e[33mWarning\e[37m: $1"
   return 0
 }
 msg() {
@@ -106,7 +106,7 @@ getSanitizer() {
   printf "-"
   printf "fsanitize="
   case "$1" in
-    0) 
+    0)
       printf "address,pointer-compare,pointer-subtract,leak";;
     1) printf "thread";;
     2) printf "undefined";;
@@ -127,7 +127,7 @@ getSanitizer() {
   esac
 }
 
-################ TESTER ################ 
+################ TESTER ################
 #test structure:
 #   |--Test
 #   |datadata
@@ -160,9 +160,9 @@ performTest() {
 
   data="$1"
   ans="$2"
-  [ $dontTrimData -eq 0 ] && 
+  [ $dontTrimData -eq 0 ] &&
     data=$(echo "$1" | sed "s/^ *// ; s/ *$//")
-  [ $dontTrimAns -eq 0 ] && 
+  [ $dontTrimAns -eq 0 ] &&
     ans=$(echo "$2" | sed "s/^ *// ; s/ *$//")
 
   [ "$onlyFailed" -ne 1 ] &&
@@ -184,7 +184,7 @@ performTest() {
   progOutput="$(cat $tmpfile)"
 
   timeEnd="$(date +%s%N)"
-  
+
   [ "$onlyFailed" -ne 1 ] &&
     [ "$(printf "$progOutput" | tail -c 1)" ] && echo
 
@@ -195,13 +195,13 @@ performTest() {
 
   testId=$(($testId + 1))
 
-  if [ ! -z "$ans" ]; then 
-    [ $dontTrimAns -eq 0 ] && 
+  if [ ! -z "$ans" ]; then
+    [ $dontTrimAns -eq 0 ] &&
       progOutput=$(echo "$progOutput" | sed "s/^ *// ; s/ *$//")
 
     if [ "$ans" = "$progOutput" ]; then
       [ "$onlyFailed" -ne 1 ] &&
-        echo "\e[32mCorrect\e[0m" 
+        echo "\e[32mCorrect\e[0m"
       return 1
     else
       if [ "$onlyFailed" -eq 1 ]; then
@@ -249,7 +249,7 @@ runTests() {
         [ $curStatus -eq 2 ] && testAns="$buf"
         performTest "$testData" "$testAns"
         passed=$?
-        [ ! -z "$testAns" ] && 
+        [ ! -z "$testAns" ] &&
           testPassed=$(($testPassed + $passed)) &&
           testTotal=$(($testTotal + 1))
         testData=''
@@ -265,7 +265,7 @@ runTests() {
   if [ $curStatus -ne 0 ]; then
     performTest "$testData" "$testAns"
     passed=$?
-    [ ! -z "$testAns" ] && 
+    [ ! -z "$testAns" ] &&
       testPassed=$(($testPassed + $passed)) &&
       testTotal=$(($testTotal + 1))
   fi
@@ -281,16 +281,16 @@ runTests() {
   fi
   rm $tmpfile
 }
-################ TESTER END ################ 
+################ TESTER END ################
 
 runProgram() {
   if [ ! -z "$pipeInp" ]; then
-    msg "Piping data from '$pipeInp'" 
+    msg "Piping data from '$pipeInp'"
     cat "$pipeInp" | "$dir/$output" $progArgs
     retval=$?
     [ $retval -ne 0 ] && warning "Program returned non-zero value!" && exit $retval
   else if [ ! -z "$testFile" ]; then
-    msg "Taking tests from '$testFile'" 
+    msg "Taking tests from '$testFile'"
     runTests
   else
     #echo "$progArgs"
@@ -304,7 +304,7 @@ runProgram() {
 ############ FULL ARGS #################
 fullArgs=""
 for arg in "$@"; do
-  case "$arg" in  
+  case "$arg" in
     *\ * ) fullArgs="$fullArgs '$arg'";;
     *) fullArgs="$fullArgs $arg";;
   esac
@@ -346,14 +346,14 @@ while [ ! -z "$1" ]; do
     case "$arg" in
       -h) helpmsg; exit 0;;
       -r) run=1;;
-      -d) 
+      -d)
         [ "$dir" != "build" ] &&
           warning "flag '-p' overwritten by '-d' flag!"
         dir="$2"
         [ "$#" -le 1 ] && error "No directory provided" 9
         shift
         ;;
-      -p) 
+      -p)
         [ "$dir" != "build" ] &&
           warning "flag '-d' overwritten by '-p' flag!"
         dir="."
@@ -362,14 +362,14 @@ while [ ! -z "$1" ]; do
       -g) flags="$flags -g";;
       -w) warnings=0;;
       -o) output="$2"; shift;;
-      -i) 
+      -i)
         [ ! -z "$testFile" ] &&
           error "Flags i and t are incompatable!" 8
         pipeInp="$2"
         [ "$#" -le 1 ] && error "No pipe file provided" 9
         shift
         ;;
-      -t) 
+      -t)
         [ ! -z "$pipeInp" ] &&
           error "Flags i and t are incomp!" 8
         testFile="$2"
@@ -396,19 +396,19 @@ while [ ! -z "$1" ]; do
       -l) flags="$flags -ldl";;
       -M) flags="$flags -lrt";;
       -j) flags="$flags $EJUDGE_FLAGS";;
-      -H) 
+      -H)
         flags="$flags -fdiagnostics-color=always";
         if [ "$#" -le 1 ] || [ -f "$2" ]; then
           headCppErrors=10;
         else
           headCppErrors=$2; shift
         fi;;
-      --) 
+      --)
         progArgs="$(echo "$fullArgs" | awk -F '--' '{print $2}')";
         break 2
         ;;
       -*) warning "unknown flag '$arg'!";;
-       *) 
+       *)
          [ ! -z "$file" ] &&
            warning "input file overwritten!"
          file="$1"
@@ -440,17 +440,17 @@ if [ $warnings -eq 1 ]; then
     [ "$choose" != "y" ] && msg "No" && exit 4 || msg "Yes"
   fi
 
-  if [ "$ext" != "c" ] && [ "$ext" != "cpp" ]; then 
+  if [ "$ext" != "c" ] && [ "$ext" != "cpp" ]; then
     warning "$file not a C extension!" && read -p "Continue? [y/N] " choose
     [ -z $choose ] && choose="n"
-    [ "$choose" != "y" ] && msg "No" && exit 4 || msg "Yes" 
+    [ "$choose" != "y" ] && msg "No" && exit 4 || msg "Yes"
   fi
 
 fi
 
 #msg "$CC \"$file\" -o \"$dir/$output\" $flags $sanitizers"
 if [ $headCppErrors -ne 0 ]; then
-  errors=$($CC "$file" -o "$dir/$output" $flags $sanitizers 2>&1) 
+  errors=$($CC "$file" -o "$dir/$output" $flags $sanitizers 2>&1)
   [ $? -ne 0 ] && echo "$errors" | head -$headCppErrors && exit
 else
   $CC "$file" -o "$dir/$output" $flags $sanitizers

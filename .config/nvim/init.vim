@@ -109,7 +109,7 @@ let g:syntastic_python_checkers = ['flake8']
 "let g:syntastic_flake8_config_file = '~/.config/flake8'
 let g:syntastic_python_flake8_args = '--config ~/.config/flake8'
 
-let g:coc_node_path = '/usr/bin/node'
+let g:coc_node_path = '~/.nvm/versions/node/v16.16.0/bin/node'
 let g:tex_flavor = 'latex'
 
 set formatoptions-=cro
@@ -135,6 +135,7 @@ hi ColorColumn      ctermbg=8
 let g:UltiSnipsExpandTrigger="<tab>"
 let g:UltiSnipsJumpForwardTrigger="<c-b>"
 let g:UltiSnipsJumpBackwardTrigger="<c-z>"
+let g:UltiSnipsSnippetDirectories = [ "~/.local/share/nvim/snippets" ]
 
 " If you want :UltiSnipsEdit to split your window.
 let g:UltiSnipsEditSplit="vertical"

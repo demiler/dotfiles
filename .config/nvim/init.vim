@@ -112,7 +112,6 @@ let g:syntastic_python_flake8_args = '--config ~/.config/flake8'
 let g:coc_node_path = '/usr/bin/node'
 let g:tex_flavor = 'latex'
 
-"plugins setup
 set formatoptions-=cro
 
 "themes and look
@@ -144,27 +143,16 @@ let g:UltiSnipsEditSplit="vertical"
 "let b:ale_fixers = { 'javascript': ['prettier'] }
 "let g:ale_fix_on_save = 1
 
-"set statusline=\ %{mode()}\ %t\ %m\ %=%y\ ≡\ %c:%l\ %p%%\
 "airline setup
-"let g:airline#extensions#keymap#enabled = 0
-"let g:airline_powerline_fonts = 1
 let g:airline_theme = 'base16_colors'
-
-"let g:airline_theme = 'dark'
-"let g:airline_theme = 'violet'
-"let g:airline_theme = 'base16'
-
-"snipset setup
-"let g:UltiSnipsExpandTrigger="<tab>"
-"let g:UltiSnipsJumpForwardTrigger="<c-d>"
-"let g:UltiSnipsJumpBackwardTrigger="<c-e>"
-"let g:UltiSnipsSnippetDirectories = ['/home/demiler/.vim/ultisnips']
-"let g:UltiSnipsEditSplit="vertical"
-
-"let g:clang_library_path = '/usr/lib/llvm-6.0/lib'
-"let g:clang_close_preview = 1
-
-"let g:XkbSwitchIMappings = ['ru']
+let g:airline_powerline_fonts = 1
+let g:airline_left_sep = ''
+let g:airline_right_sep = ''
+let g:airline#extensions#keymap#enabled = '0'
+let g:airline_symbols = {}
+let g:airline_symbols.colnr = ': '
 
 "highlight thing inside css`...` too
 let g:htl_css_templates = 1
+
+syntax spell toplevel

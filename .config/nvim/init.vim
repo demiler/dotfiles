@@ -17,7 +17,6 @@ autocmd FileType * set formatoptions-=ro
 autocmd FileType c setlocal colorcolumn=100 tabstop=4 shiftwidth=4 softtabstop=4
 autocmd FileType cpp setlocal colorcolumn=100 tabstop=4 shiftwidth=4 softtabstop=4 cindent cino=j1,(0,ws,Ws
 autocmd FileType make call SetMakeOptions()
-autocmd FileType asm call SetAsmOptions()
 autocmd FileType txt call SetTextOptions()
 "autocmd FileType tex call SetLatexOptions()
 autocmd FileType i3rc setlocal filetype=i3
@@ -58,28 +57,6 @@ vnoremap a$ F$of$
 
 command RemoveTrailing :silent!%s/ \+$// | :noh
 command To4Spaces :silent!%s/  /    / | :noh
-
-
-"functions
-function SetAsmOptions()
-  set autoindent
-  set colorcolumn=80
-  set ft=nasm
-  syn match nasmSegRegister "\<r[1-3]\>"
-  syn keyword nasmDirective store
-  syn keyword nasmDirective cmpje
-  syn keyword nasmDirective cmpjn
-  syn keyword nasmDirective load
-  syn keyword nasmDirective mod
-  syn keyword nasmDirective j
-  syn keyword nasmMacro PHV
-  syn keyword nasmMacro HEADER
-  syn keyword nasmMacro PORTMASK
-  syn keyword nasmAmdInstruction halt
-  syn keyword nasmAmdInstruction exact_match
-  syn keyword nasmAmdInstruction longest_prefix_match
-  syn keyword nasmAmdInstruction hash
-endfunction
 
 function SetTextOptions()
   XkbSwitchEnable

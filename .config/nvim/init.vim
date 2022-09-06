@@ -77,7 +77,7 @@ function SetMakeOptions()
 endfunction
 
 "plugins
-call plug#begin('~/.vim/plugged')
+call plug#begin('~/.local/share/nvim/plugged')
 Plug 'vim-airline/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
 Plug 'scrooloose/nerdcommenter'
@@ -89,13 +89,15 @@ Plug 'justinmk/vim-syntax-extra'
 Plug 'jonsmithers/vim-html-template-literals'
 Plug 'pangloss/vim-javascript'
 Plug 'othree/jsdoc-syntax.vim'
-Plug 'xavierd/clang_complete'
-Plug 'numirias/semshi', {'do': ':UpdateRemotePlugins'}
-Plug 'neoclide/coc.nvim', {'branch': 'main'}
-Plug 'puremourning/vimspector'
+"Plug 'xavierd/clang_complete'
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
+Plug 'vim-syntastic/syntastic'
+Plug 'vim-python/python-syntax'
+Plug 'sonph/onehalf', { 'rtp': 'vim' }
+Plug 'morhetz/gruvbox'
 "Plug 'w0rp/ale'
 "Plug 'chrisbra/Colorizer'
-"Plug 'SirVer/ultisnips'
+Plug 'SirVer/ultisnips'
 "Plug 'octol/vim-cpp-enhanced-highlight'
 "Plug 'honza/vim-snippets'
 "Plug 'Valloric/YouCompleteMe'

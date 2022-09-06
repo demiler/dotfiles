@@ -102,7 +102,14 @@ Plug 'SirVer/ultisnips'
 "Plug 'honza/vim-snippets'
 "Plug 'Valloric/YouCompleteMe'
 call plug#end()
-let g:coc_node_path = '/usr/bin/nodejs'
+
+"let g:semshi#error_sign	= v:false
+let g:python_highlight_all = 1
+let g:syntastic_python_checkers = ['flake8']
+"let g:syntastic_flake8_config_file = '~/.config/flake8'
+let g:syntastic_python_flake8_args = '--config ~/.config/flake8'
+
+let g:coc_node_path = '/usr/bin/node'
 let g:tex_flavor = 'latex'
 
 "plugins setup

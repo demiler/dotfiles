@@ -13,25 +13,11 @@ set splitright
 set hlsearch
 set guicursor= "disable auto comment
 autocmd FileType * set formatoptions-=ro
-
 autocmd FileType c setlocal colorcolumn=100 tabstop=4 shiftwidth=4 softtabstop=4
 autocmd FileType cpp setlocal colorcolumn=100 tabstop=4 shiftwidth=4 softtabstop=4 cindent cino=j1,(0,ws,Ws
 autocmd FileType make call SetMakeOptions()
 autocmd FileType txt call SetTextOptions()
-"autocmd FileType tex call SetLatexOptions()
-autocmd FileType i3rc setlocal filetype=i3
-
-hi SpellBad         ctermbg=88    ctermfg=7
-hi WordUnderCursor  ctermbg=111   ctermfg=0
-hi TabLineFill      ctermfg=240
-hi TabLine          ctermfg=250   ctermbg=0
-hi Folded           ctermbg=238
-hi Pmenu            ctermbg=238   ctermfg=253
-hi PmenuSel         ctermbg=245   ctermfg=0
-hi PmenuSbar        ctermbg=236
-hi PmenuThumb       ctermbg=242
-hi VertSplit        ctermbg=240   ctermfg=232
-hi ColorColumn      ctermbg=8
+autocmd FileType tex call SetLatexOptions()
 
 nmap s o<ESC>
 nmap S O<ESC>
@@ -115,9 +101,29 @@ let g:tex_flavor = 'latex'
 set formatoptions-=cro
 
 "themes and look
-"colorscheme desert
-"colorscheme gruvbox
 set bg=dark
+colorscheme onehalfdark
+hi pythonClassVar ctermfg=122
+hi CocMenuSel ctermbg=75 ctermfg=0
+
+hi SpellBad         ctermbg=88    ctermfg=7
+hi WordUnderCursor  ctermbg=111   ctermfg=0
+hi TabLineFill      ctermfg=240
+hi TabLine          ctermfg=250   ctermbg=0
+hi Folded           ctermbg=238
+hi Pmenu            ctermbg=238   ctermfg=253
+hi PmenuSel         ctermbg=245   ctermfg=0
+hi PmenuSbar        ctermbg=236
+hi PmenuThumb       ctermbg=242
+hi VertSplit        ctermbg=240   ctermfg=232
+hi ColorColumn      ctermbg=8
+
+let g:UltiSnipsExpandTrigger="<tab>"
+let g:UltiSnipsJumpForwardTrigger="<c-b>"
+let g:UltiSnipsJumpBackwardTrigger="<c-z>"
+
+" If you want :UltiSnipsEdit to split your window.
+let g:UltiSnipsEditSplit="vertical"
 
 "prettier settinigs
 "let b:ale_fixers = { 'javascript': ['prettier'] }

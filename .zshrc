@@ -1,3 +1,15 @@
+concd () {
+  cd $(fd ".*" ~/contests/sem6 -t l -t d -E ".git" -E "__pycache__" | fzf)
+}
+
+ccd () {
+  cd $(fd ".*" $1 -t d -E .git | fzf)
+}
+
+grdir() {
+  nemo "$(pwd)" 2> /dev/null &|
+}
+
 export LC_ALL=en_US.UTF-8
 
 export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
@@ -29,6 +41,7 @@ source $ZSH/oh-my-zsh.sh
 ###################| ALIASES |###################
 alias copyworkkey="cat ~/.ssh/work.pub | copy"
 alias psgrep="ps -aux | grep -v grep | grep"
+alias config='/usr/bin/git --git-dir=$HOME/dotfiles/ --work-tree=$HOME'
 alias vimrc="vim ~/.config/nvim/init.vim"
 alias seczsh="ZSH_SECURE=1 zsh"
 alias ip="ip -c"
@@ -38,7 +51,7 @@ alias copy="xclip -selection clipboard"
 alias paste="xclip -selection clipboard -o"
 alias vim=nvim
 alias cdb='cd ..'
-alias lt="ls -t --color=always | head"
+alias lt="ls -tr"
 alias gits="git status"
 alias gitl="git --no-pager log --oneline"
 alias gitlh="gitl --color=always | head"

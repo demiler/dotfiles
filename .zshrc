@@ -1,5 +1,5 @@
 concd () {
-  cd $(fd ".*" ~/contests/sem6 -t l -t d -E ".git" -E "__pycache__" | fzf)
+  cd $(fd ".*" ~/sems/sem7 -t l -t d -E ".git" -E "__pycache__" | fzf)
 }
 
 ccd () {
@@ -67,6 +67,9 @@ bindkey '^?' backward-delete-char
 bindkey '^h' backward-delete-char
 bindkey '^w' backward-kill-word
 bindkey '^r' history-incremental-search-backward
+bindkey '^s' history-incremental-search-forward
+bindkey "^[[A" history-beginning-search-backward
+bindkey "^[[B" history-beginning-search-forward
 
 #vim_ins_mode="%{%F{37}%}[I]%f%}"
 #vim_cmd_mode="%{%F{41}%}[N]%f%}"

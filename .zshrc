@@ -22,6 +22,10 @@ grdir() {
   nemo "$(pwd)" 2> /dev/null &|
 }
 
+sshrc() {
+  [ $# -eq 1 ] && nvim ~/.ssh/config.d/$1 || nvim ~/.ssh/config
+}
+
 #source /etc/profile.d/vte.sh
 export LC_ALL=en_US.UTF-8
 
@@ -69,12 +73,12 @@ source $ZSH/oh-my-zsh.sh
 #export ARCHFLAGS="-arch x86_64"
 
 ###################| ALIASES |###################
-alias vimrc="vim ~/.config/nvim/init.vim"
 alias workvpn="doas openvpn --config .ovpn/demiler.ovpn"
 alias psgrep="ps -aux | grep -v grep | grep"
 alias bell="notify-send -a 'Shell bell' -h 'string:desktop-entry:org.kde.konsole' DONE"
 alias seczsh="ZSH_SECURE=1 zsh"
 alias ip="ip -c"
+alias vimrc="vim ~/.config/nvim/init.vim"
 alias zshrc="vim ~/.zshrc"
 alias genpass='pwgen -1 -s 20 | tr -d "\n" | copy && echo $(copy -o)'
 alias copy="xclip -selection clipboard"

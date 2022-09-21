@@ -18,6 +18,7 @@ autocmd FileType cpp setlocal colorcolumn=100 tabstop=4 shiftwidth=4 softtabstop
 autocmd FileType make call SetMakeOptions()
 autocmd FileType txt call SetTextOptions()
 autocmd FileType tex call SetLatexOptions()
+autocmd BufRead *.njk setlocal ft=html
 
 nmap s o<ESC>
 nmap S O<ESC>

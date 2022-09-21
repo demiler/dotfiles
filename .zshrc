@@ -11,7 +11,7 @@ dkrypt() {
 }
 
 concd () {
-  cd $(fd ".*" ~/contests/sem6 -t l -t d -E ".git" -E "__pycache__" | fzf)
+  cd $(fd ".*" ~/contests/sem7 -t l -t d -E ".git" -E "__pycache__" | fzf)
 }
 
 ccd () {

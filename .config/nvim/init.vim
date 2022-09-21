@@ -83,24 +83,17 @@ Plug 'vim-airline/vim-airline-themes'
 Plug 'scrooloose/nerdcommenter'
 Plug 'tpope/vim-surround'
 Plug 'tpope/vim-repeat'
-"Plug 'lyokha/vim-xkbswitch'
 Plug 'lervag/vimtex'
 Plug 'justinmk/vim-syntax-extra'
 Plug 'jonsmithers/vim-html-template-literals'
 Plug 'pangloss/vim-javascript'
 Plug 'othree/jsdoc-syntax.vim'
-"Plug 'xavierd/clang_complete'
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'vim-syntastic/syntastic'
 Plug 'vim-python/python-syntax'
 Plug 'sonph/onehalf', { 'rtp': 'vim' }
 Plug 'morhetz/gruvbox'
-"Plug 'w0rp/ale'
-"Plug 'chrisbra/Colorizer'
 Plug 'SirVer/ultisnips'
-"Plug 'octol/vim-cpp-enhanced-highlight'
-"Plug 'honza/vim-snippets'
-"Plug 'Valloric/YouCompleteMe'
 call plug#end()
 
 "let g:semshi#error_sign	= v:false
@@ -132,6 +125,7 @@ hi PmenuThumb       ctermbg=242
 hi VertSplit        ctermbg=240   ctermfg=232
 hi ColorColumn      ctermbg=8
 
+" UltiSnips config
 let g:UltiSnipsExpandTrigger="<tab>"
 let g:UltiSnipsJumpForwardTrigger="<c-b>"
 let g:UltiSnipsJumpBackwardTrigger="<c-z>"

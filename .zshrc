@@ -10,6 +10,10 @@ grdir() {
   nemo "$(pwd)" 2> /dev/null &|
 }
 
+sshrc() {
+  [ $# -eq 1 ] && nvim ~/.ssh/config.d/$1 || nvim ~/.ssh/config
+}
+
 export LC_ALL=en_US.UTF-8
 
 export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
@@ -29,6 +33,7 @@ plugins=(
   git
   zsh-syntax-highlighting
   zsh-autosuggestions
+  history-substring-search
 )
 
 # Load Git completion
@@ -68,8 +73,8 @@ bindkey '^h' backward-delete-char
 bindkey '^w' backward-kill-word
 bindkey '^r' history-incremental-search-backward
 bindkey '^s' history-incremental-search-forward
-bindkey "^[[A" history-beginning-search-backward
-bindkey "^[[B" history-beginning-search-forward
+bindkey '^[[A' history-substring-search-up
+bindkey '^[[B' history-substring-search-down
 
 #vim_ins_mode="%{%F{37}%}[I]%f%}"
 #vim_cmd_mode="%{%F{41}%}[N]%f%}"

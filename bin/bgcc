@@ -30,6 +30,7 @@ Usage: bgcc [-f] \e[4mfile\e[0m [-rpgwsjmahe] [-d \e[4mdir\e[0m] [-o \e[4mfile\e
   -h\tDisplay this message
   -e\tScript error codes
   -P\tUse g++ instead of gcc
+  -G\tPass string of parameters to compiler
   --\tPass args to your program
   "
 }
@@ -61,19 +62,19 @@ showTestFileStruct() {
   "
 }
 error() {
-  echo "\e[31mError\e[0m: $1"
+  echo -e "\e[31mError\e[0m: $1"
   exit $2
 }
 warning() {
-  [ $warnings -eq 1 ] && echo "\e[33mWarning\e[37m: $1"
+  [ $warnings -eq 1 ] && echo -e "\e[33mWarning\e[37m: $1"
   return 0
 }
 msg() {
-  [ $msg -eq 1 ] && echo "$1"
+  [ $msg -eq 1 ] && echo -e "$1"
   return 0
 }
 printSanitizers() {
-  echo "Sanitizers levels:
+  echo -e "Sanitizers levels:
 0 - Addresses violation, memory leak
 address pointer-compare pointer-subtract leak
 
@@ -149,7 +150,7 @@ printNiceTestBound() {
 killer() {
   sleep 10
   kill -9 $1 > /dev/null 2>&1
-  [ "$?" -eq 0 ] && echo "\n\e[31mProcces killed, it took more than 10s.\e[0m"
+  [ "$?" -eq 0 ] && echo -e "\n\e[31mProcces killed, it took more than 10s.\e[0m"
 }
 
 performTest() {
@@ -391,6 +392,7 @@ while [ ! -z "$1" ]; do
       -P) CC=g++;;
       -e) errorcode; exit 0;;
       -s) msg=0;;
+      -G) flags="$flags $2"; shift;;
       -m) flags="$flags -lm";;
       -a) flags="$flags -m32";;
       -l) flags="$flags -ldl";;

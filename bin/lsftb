@@ -1,0 +1,5 @@
+#!/bin/sh
+table=$(grep -v "^#" /etc/fstab | sed -e 's/ \+/ /g')
+table="\e[1mfile_system mount_point type options dump pass\e[0m\n$table"
+echo -e "$table" | column -t
+

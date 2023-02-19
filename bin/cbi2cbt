@@ -1,0 +1,17 @@
+#!/bin/sh
+# Text from image in clipboard to actual text
+
+[ $# -gt 1 ] && echo "Usage: cbi2cbt [language for tesseract]" && exit
+
+tmp=$(mktemp)
+lang="eng"
+[ $# -eq 1 ] && lang="$1"
+
+xclip -selection clipboard -o -t image/png > $tmp
+if ! file $tmp | grep -q "PNG image data"; then
+  echo "Not an image"
+  rm $tmp
+  exit 1
+fi
+tesseract $tmp stdout -l "$lang" | xclip -selection clipboard
+rm $tmp

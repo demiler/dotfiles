@@ -1,0 +1,2 @@
+#!/bin/sh
+ffmpeg -i $1 -filter_complex "fps=24,split=2 [a][b]; [a] palettegen [pal]; [b] fifo [b]; [b] [pal] paletteuse" $1.gif

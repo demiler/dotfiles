@@ -1,0 +1,360 @@
+#!/bin/sh
+
+printHelp() {
+  echo "Usage: $(basename $0)"
+  echo "  :Simple cli tool to control VMs in course $GROUP."
+  echo "  :Tool might not work if you'll set different parametes yourself with VBoxManage or VB GUI"
+  echo
+  echo "  list vms|running|nets"
+  echo "    vms - list all machines under $GROUP"
+  echo "    running - list all runnning vms"
+  echo "    nets - list all vms interfaces"
+  echo
+  echo "  start|stop|reboot|slap|kick <MACHINE>"
+  echo "    :Start machine"
+  echo "    :Stop machine gently"
+  echo "    :Reboot machine gently"
+  echo "    :Slap vm down (poweroff)"
+  echo "    :Give vm a good kick to make it work (reboot)"
+  echo
+  echo "  int <MACHINE> id <N> nat|net|off"
+  echo "    :Control network interface"
+  echo "    off - turns interface off"
+  echo "    net <name> - set interface <N> to intnet and network <name> (N = 1 is reserved)"
+  echo "    nat - set interface <N> to NAT"
+  echo
+  echo "  snap <BASE> num <N> [name1] [name2]..."
+  echo "    :Clone machines from base with (if) given names (else will be named cloneN)"
+  echo
+  echo "  connect <MACHINE>"
+  echo "    :Connect to MACHINE via com port with socat (exit with ^]) (starts machine if off)"
+  echo
+  echo "  import <FILE> [<name>]"
+  echo "    :Import machine from file"
+  echo "    <name> - set machine give name after import"
+  echo
+  echo "  purge <BASE> [keepbase]"
+  echo "    :Delete all machines in $GROUP group"
+  echo "    <BASE> - base machine name required because it needs to be deleted last"
+  echo "    keepbase - save base machine"
+  echo
+  echo "  delete <MACHINE>"
+  echo "    :Delete machine"
+  echo
+  echo "  rename <MACHINE> name"
+  echo "    :Set new name to <MACHINE>"
+  echo
+  echo "  port <MACHINE> ssh|com <port>"
+  echo "    :Set ssh or com port"
+  echo
+  echo "  blackout [re]"
+  echo "    :Power off all running vms"
+  echo "    re - turn them on again after power off"
+  echo
+  echo "  steal [<path>]"
+  echo "    :Trying to to take report files from powered machines in group $GROUP."
+  echo "    :All powered machines should have nat connection to the host machine,"
+  echo "    :with sshd servers running and ssh ports set to 220N, where N - is"
+  echo "    :machine index in group (N for base is 0)."
+  echo "    path - copy files to given path (current dir by default)"
+}
+
+error() {
+  echo -e "\033[31mError:\033[0m $1"
+  exit 1
+}
+
+existentVM() {
+  echo "$VMLIST" | grep -Fx "$1" > /dev/null
+  return $?
+}
+
+runnigVM() {
+  echo "$VMSRUNNINGLIST" | grep -Fx "$1" > /dev/null
+  return $?
+}
+
+getVMIndex() {
+  index=0
+  while IFS= read -r vmname; do
+    [ "$vmname" == "$1" ] && echo $index && return 0
+    index=$(($index + 1))
+  done <<< "$VMLIST"
+}
+
+getVMsList() {
+  VBoxManage list -l $1 | grep "Groups: */$GROUP" -B1 | grep 'Name' | sed 's/^Name\:\s*//'
+}
+
+controlInterface() {
+  [ $# -lt 4 ] && error "Incomplete command, only $# arguments give! Expected at least 4"
+  machine="$1"
+  idkw=$2
+  nid=$3
+  ctrl=$4
+  net="$5"
+  runnig=0
+
+  existentVM "$machine" || error "Macnhine '$machine' is not found"
+  runnigVM "$machine" && runnig=1
+  [ "$idkw" != "id" ] && error "Unknown keyword '$idkw'! Expected 'id'"
+  [ $nid -eq 1 ] && error "Interface 1 is reserved to NAT!"
+  [ $nid -lt 2 ] || [ $nid -gt 4 ] && error "Wrong interface id '$id'! Only 2, 3 and 4 are used."
+
+  if [ "$ctrl" == "off" ]; then
+    [ $runnig -eq 0 ] &&\
+      VBoxManage modifyvm "$machine" --nic$nid null ||\
+      VBoxManage controlvm "$machine" nic$nid null
+  elif [ "$ctrl" == "net" ]; then
+    [ "$net" == "" ] && error "No intnet name given!"
+    [ $runnig -eq 0 ] &&\
+      VBoxManage modifyvm "$machine" --nic$nid intnet --intnet$nid "$5" --cableconnected$nid on ||\
+      VBoxManage controlvm "$machine" nic$nid intnet "$5" cableconnected$nid on
+  elif [ "$ctrl" == "nat" ]; then
+    [ $runnig -eq 0 ] &&\
+      VBoxManage modifyvm "$machine" --nic$nid nat ||\
+      VBoxManage controlvm "$machine" nic$nid nat
+  else
+    error "Unknown control command '$ctrl'! Expected nat|net|off"
+  fi
+}
+
+cloneVMs() {
+  basevm="$1"
+  numkw=$2
+  num=$3
+
+  existentVM "$basevm" || error "Base machine '$basevm' dosen't exist!"
+  runnigVM "$basevm" && error "Base machine is runnig, cannot clone from runnig VM!"
+  [ "$numkw" != "num" ] && error "Unknown keyword '$numkw'! Expected 'num'"
+  [ $num -le 0 ] && error "Incorrent parameter 0 for num!"
+  [ $num -ge 10 ] && error "Trying to create too many vms! Maximum number is 9, abort!"
+  shift 3
+  for name in "$@"; do existentVM "$name" && error "Macnhine $name already exist!"; done
+  for i in $(seq $(($# + 1)) $num); do existentVM "clone$i" && error "Macnhine clone$i already exist!"; done
+
+  VBoxManage snapshot "$basevm" take "VBCTL_SNAPSHOT"
+
+  for i in $(seq 1 $num); do
+    name="$1"
+    [ ! -z "$name" ] && shift || name="clone$i"
+    echo "Creating machine $name from $basevm"
+    port=$(($VMSCOUNT + $i - 1))
+    [ $port -lt 10 ] && port="0$port"
+
+    VBoxManage clonevm "$basevm" --options=Link --name="$name"\
+      --register --snapshot="VBCTL_SNAPSHOT" --basefolder="$VMSPATH"
+    VBoxManage modifyvm "$name" --uartmode1 tcpserver 23$port
+    VBoxManage modifyvm "$name" --natpf1 delete "guestssh"
+    VBoxManage modifyvm "$name" --natpf1 "guestssh,tcp,,22$port,,22"
+    VBoxManage setextradata "$name" "VBoxInternal/Devices/pcbios/0/Config/DmiSystemVendor" "$name"
+    echo
+  done
+}
+
+connectToVM() {
+  [ -z "$1" ] && error "No machine name or port given to connect to!"
+  existentVM "$1"
+  if [ $? -ne 0 ]; then
+    #error "Machine $1 dosent exist in group $GROUP"
+    port="$1"
+  else
+    runnigVM "$1" ||\
+      VBoxManage startvm "$1" --type headless
+    port="230$(getVMIndex "$1")"
+  fi
+  echo "Use ^] to exit and press enter a couple of times after connet message"
+  echo "Connection to port $port..."
+  socat -,cfmakeraw,echo=0,escape=29 TCP4:localhost:$port
+}
+
+importVM() {
+  machineFile="$1"
+  newName="$2"
+  [ -z "$machineFile" ] && error "No import file given!"
+  [ ! -f "$machineFile" ] && error "Import machine file '$machineFile' is inaccessible!"
+  existentVM "$newName" && error "Unable to import with name "$newName" - already taken."
+
+  importName="$(VBoxManage import "$machineFile" -n 2> /dev/null |\
+    grep ".*VM name" | grep "\".*\"" -o | sed 's/"//g')"
+
+  VBoxManage import "$machineFile"
+  VBoxManage modifyvm "$importName" --natpf1 delete "Rule 1"
+  VBoxManage modifyvm "$importName" --natpf1 "guestssh,tcp,,2200,,22"
+  [ ! -z "$newName" ] && VBoxManage modifyvm "$importName" --name "$newName"
+}
+
+purgeVMs() {
+  basevm="$1"
+  kw=$2
+
+  [ -z "$basevm" ] && error "No base machine name given!"
+  existentVM "$basevm" || error "Machine $basevm dosent exist!"
+  [ ! -z "$kw" ] && [ "$kw" != keepbase ] && error "Unknown keyword '$kw'. Expected keepbase"
+
+  while IFS= read -r vmname; do
+    [ "$vmname" == "$basevm" ] && continue
+    runnigVM "$vmname" && VBoxManage controlvm "$vmname" acpipowerbutton
+    echo -n "Deleting $vmname..."
+    VBoxManage unregistervm "$vmname" --delete 2> /dev/null
+    [ $? -ne 0 ] && rm -rf "$VMSPATH/$vmname"
+    echo "OK"
+  done <<< "$VMLIST"
+
+  [ "$kw" != "keepbase" ] && echo "Deleting $basevm" && VBoxManage unregistervm "$basevm" --delete
+  return 0
+}
+
+renameVM() {
+  oldName="$1"
+  newName="$2"
+  [ -z "$oldName" ] && error "No machine name given!"
+  existentVM "$oldName" || error "Machine $oldName dosent exist!"
+  [ -z "$newName" ] && error "No new name given!"
+  existentVM "$newName" && error "Machine with name $newName already exist!"
+  runnigVM "$oldName" && error "Cannot rename running vm!"
+
+  VBoxManage modifyvm "$oldName" --name "$newName"
+}
+
+setVMPort() {
+  machine="$1"
+  ptype="$2"
+  port="$3"
+
+  existentVM "$machine" || error "Machine $machine dosent exist!"
+  runnigVM "$machine" && error "Cannot modify ports of running vm!"
+
+  if [ "$ptype" == "ssh" ]; then
+    VBoxManage modifyvm "$machine" --natpf1 delete guestssh
+    VBoxManage modifyvm "$machine" --natpf1 "guestssh,tcp,,$port,,22"
+    echo "Set ssh port to $port"
+  elif [ "$ptype" == "com" ]; then
+    VBoxManage modifyvm "$machine" --uartmode1 tcpserver $port
+    echo "Set com port to $port"
+  else
+    error "Unknown port type $ptype. Expected ssh or com"
+  fi
+}
+
+turnoffAllVMs() {
+  if [ "$1" == "re" ]; then
+    action="reset"
+    echo "Reset time!"
+  elif [ ! -z "$1" ]; then
+    error "Unknown blackout command: $1"
+  else
+    action="acpipowerbutton"
+    echo -e "It's \x1b[38;5;240mBlackout\x1b[0m"
+  fi
+
+  while IFS= read -r vmname; do
+    VBoxManage controlvm "$vmname" $action
+  done <<< "$VMSRUNNINGLIST"
+}
+
+stealReports() {
+  path="$1"
+  [ -z "$path" ] && path="."
+  [ ! -d "$path" ] && error "Path '$path' dosent exist!"
+
+  while IFS= read -r vmname; do
+    echo "Stealing report from $vmname"
+    pi=$(getVMIndex "$vmname")
+    sshParams="ssh -p 220$pi -oStrictHostKeyChecking=no"
+
+    timeout 3 \
+      sshpass -p "root" \
+      rsync --ignore-existing-files -e $sshParams "root@localhost:report.*" $path\
+      2> /dev/null
+    if [ $? -eq 124 ]; then
+      echo "Timeout to steal report from $vmname. Maybe you forgot to dhcpcd?\n"
+    elif [ $? -ne 125 ]; then
+      echo "Successfully got report file"
+    fi
+  done <<< "$VMSRUNNINGLIST"
+}
+
+listInfo() {
+  case "$1" in
+    vms) echo "$VMLIST";;
+    running) echo "$VMSRUNNINGLIST";;
+    nets)
+      while IFS= read -r vmname; do
+        nics="$(VBoxManage showvminfo "$vmname" |\
+          grep 'NIC [0-9]*: *MAC' |\
+          awk -F ',' '{print $2}' |\
+          sed 's/ *Attachment\: /  /')"
+
+        echo "$vmname:"
+        nicID=0
+        while IFS= read -r nic; do
+          echo "  NIC $(($nicID + 1)) [eth$nicID]: $nic"
+          nicID=$(($nicID + 1))
+        done <<< "$nics"
+      done <<< "$VMLIST";;
+    "") echo "$VMLIST";;
+    *) error "Unknown list command: $1";;
+  esac
+}
+
+powerVM() {
+  cmd=$1
+  [ -z "$2" ] && error "No machine name given!"
+  existentVM "$2" || error "Machine $2 dosent exist!"
+  if [ "$cmd" == "start" ]; then
+    VBoxManage startvm "$2" --type headless
+  elif [ "$cmd" == "stop" ]; then
+    VBoxManage controlvm "$2" acpipowerbutton
+  elif [ "$cmd" == "slap" ]; then
+    VBoxManage controlvm "$2" poweroff
+  elif [ "$cmd" == "reboot" ]; then
+    VBoxManage controlvm "$2" reset
+  elif [ "$cmd" == "kick" ]; then
+    VBoxManage controlvm "$2" poweroff
+    VBoxManage startvm "$2" --type headless
+  else
+    error "Unkown power command: $cmd"
+  fi
+}
+
+deleteVM() {
+  [ -z "$1" ] && error "No machine name given!"
+  existentVM "$1" || error "Machine $1 dosent exist!"
+  runnigVM "$1" && VBoxManage controlvm "$1" poweroff
+  VBoxManage unregistervm "$1" --delete
+}
+
+################################################################################
+GROUP="LinuxNetwork$(date +%Y)"
+VMSPATH="$HOME/VirtualBox/$GROUP/"
+[ $# -lt 1 ] && printHelp && exit 1
+
+VMLIST="$(getVMsList vms)"
+VMSRUNNINGLIST="$(getVMsList runningvms)"
+VMSCOUNT=$(echo "$VMLIST" | wc -l)
+
+cmd=$1
+shift
+
+case $cmd in
+  help)     printHelp && exit 0;;
+  int)      controlInterface "$@";;
+  snap)     cloneVMs "$@";;
+  c|con|connect)  connectToVM "$@";;
+  import)   importVM "$@";;
+  purge)    purgeVMs "$@";;
+  rename)   renameVM "$@";;
+  port)     setVMPort "$@";;
+  blackout) turnoffAllVMs "$@";;
+  steal)    stealReports "$@";;
+  list)     listInfo "$@";;
+  start)    powerVM start "$@";;
+  stop)     powerVM stop "$@";;
+  reboot)   powerVM reboot "$@";;
+  kick)     powerVM kick "$@";;
+  slap)     powerVM slap "$@";;
+  delete)   deleteVM "$@";;
+  *)
+    error "Unknown command: ${cmd}"
+esac

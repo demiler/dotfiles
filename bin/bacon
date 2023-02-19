@@ -1,0 +1,5 @@
+#!/bin/sh
+[ $# -lt 2 ] && echo -e "simple base converter\nbacon \e[4mnumber\e[0m \e[4mbase\e[0m [\e[4minput base\e[0m]" && exit 1
+
+[ $# -eq 3 ] && base=$3 || base=10
+echo "obase=$2; ibase=$base; $1" | bc

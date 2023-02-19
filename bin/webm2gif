@@ -1,0 +1,20 @@
+#!/bin/sh
+
+[ "$#" -lt 1 ] && echo "No input file" && exit
+
+webm="$1"
+gif="${webm%.*}.gif"
+pallete="/tmp/pallete_$RANDOM.png"
+
+framerate=24
+scale=480
+
+[ "$#" -ge 2 ] && framerate="$2"
+[ "$#" -ge 3 ] && scale="$3"
+
+#ffmpeg -y -i "$webm" -vf palettegen "$pallete"
+#ffmpeg -y -i "$webm" -i "$pallete" -filter_complex paletteuse -r $r -framerate $framerate "$gif"
+#rm "$pallete"
+
+ffmpeg -i "$webm" -vf scale=$scale:-1 -r $framerate \
+  -f image2pipe -vcodec ppm - | convert -delay 10 -loop 0 - "$gif"

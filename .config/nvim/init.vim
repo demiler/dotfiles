@@ -12,13 +12,14 @@ set splitbelow
 set splitright
 set hlsearch
 set guicursor= "disable auto comment
+
 autocmd FileType * set formatoptions-=ro
 autocmd FileType c setlocal colorcolumn=100 tabstop=4 shiftwidth=4 softtabstop=4
 autocmd FileType cpp setlocal colorcolumn=100 tabstop=4 shiftwidth=4 softtabstop=4 cindent cino=j1,(0,ws,Ws
 autocmd FileType make call SetMakeOptions()
-autocmd FileType txt call SetTextOptions()
 autocmd FileType tex call SetLatexOptions()
-autocmd BufRead *.njk setlocal ft=html
+autocmd BufRead,BufNewFile *.njk setlocal ft=html
+autocmd BufRead,BufNewFile ~/.ssh/config.d/* setlocal syntax=sshconfig
 
 nmap s o<ESC>
 nmap S O<ESC>
@@ -36,6 +37,7 @@ nnoremap <C-right> gt
 "st ctrl-arrow fix
 map <ESC>[1;5D <C-Left>
 map <ESC>[1;5C <C-Right>
+noremap <F12> <Esc>:syntax sync fromstart<CR>
 
 onoremap <silent> i$ :<c-u>normal! T$vt$<cr>
 vnoremap i$ T$ot$
@@ -45,17 +47,10 @@ vnoremap a$ F$of$
 command RemoveTrailing :silent!%s/ \+$// | :noh
 command To4Spaces :silent!%s/  /    / | :noh
 
-function SetTextOptions()
-  XkbSwitchEnable
-  setlocal linebreak
-  setlocal spell spelllang=en,ru
-  "nnoremap k gk
-  "nnoremap j gj
-endfunction
-
 function SetLatexOptions()
   "XkbSwitchEnable
   if !exists("g:latexOptionsSet")
+    let g:airline#extensions#whitespace#enabled = 0
     let g:latexOptionsSet='true'
     SyntasticToggleMode
     set keymap=russian-jcukenwin
@@ -156,4 +151,10 @@ let g:airline_symbols.colnr = ': '
 "highlight thing inside css`...` too
 let g:htl_css_templates = 1
 
+" syntastic
+let g:syntastic_mode_map = {
+    \ "mode": "active",
+    \ "passive_filetypes": ["cpp", "hpp"] }
+
 syntax spell toplevel
+set mouse=

@@ -71,7 +71,6 @@ autoload -Uz compinit && compinit
 source $ZSH/oh-my-zsh.sh
 
 ###################| ALIASES |###################
-alias history="history -E"
 alias psgrep="ps -aux | grep -v grep | grep"
 alias bell="notify-send -a 'Shell bell' -h 'string:desktop-entry:org.kde.konsole' DONE"
 alias seczsh="ZSH_SECURE=1 zsh"

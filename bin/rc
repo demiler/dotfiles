@@ -1,0 +1,53 @@
+#!/bin/sh
+# Opens your configs
+
+[ $# -lt 1 ] && echo "Usage: rc <config name> [config options...]" && exit 1
+config=$1; shift
+[ $# -ne 0 ] && config="_$config"
+
+if [ -z "$EDITOR" ]; then
+  command -v nano >/dev/null && EDITOR=nano ||\
+  command -v nvim >/dev/null && EDITOR=nvim ||\
+  command -v vim >/dev/null && EDITOR=vim ||\
+  { echo "No editor found in PATH" && exit 2; }
+fi
+
+# Warning: don't forget to define not only config name in case
+# but also config name with underscore! Underscore means
+# config was given some options to work with (starting from $1)
+case "$config" in
+  vim|_vim)
+    $EDITOR $HOME/.config/nvim/init.vim;;
+
+  ssh)
+    $EDITOR $HOME/.ssh/config;;
+  _ssh)
+    $EDITOR "$HOME/.ssh/config.d/$1";;
+
+  zsh)
+    [ $# -eq 0 ] && $EDITOR $HOME/.zshrc;;
+  _zsh)
+    case $1 in
+      h|hist|history) $EDITOR $HOME/.zsh_history;;
+      *) echo "Unknown zsh config option '$1'" && exit 3;;
+    esac;;
+
+  mpv|_mpv)
+    $EDITOR $HOME/.config/mpv/input.conf;;
+
+  js)
+    [ -f "package.json" ] &&\
+      $EDITOR package.json ||\
+      echo "Can't find package.json in this directory";;
+  _js)
+    [ -f "$1/package.json" ] &&\
+      $EDITOR "$1/package.json" ||\
+      echo "Can't find package.json in '$1' directory";;
+
+  screen|_screen)
+    $EDITOR $HOME/.screenrc;;
+
+  *)
+    echo "Unknown config name '$config'"
+    exit 3;;
+esac

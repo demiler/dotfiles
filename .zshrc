@@ -1,5 +1,18 @@
+###################| FUNCTIONS |###################
+krypt() {
+  [ $# -lt 3 ] && echo "Usage: $0 <key file> <out name> <file1> [file2] [file3] ..." && return 1
+  tar -zcf - ${@:3} | gpg --batch --passphrase-file "$1" -c --cipher-algo AES256 -o "$2"
+}
+
+dkrypt() {
+  [ $# -lt 2 ] && echo "Usage: $0 <key file> <krypt file1> [file2]..." && return 1
+  for f in ${@:2}; do
+    gpg --batch --passphrase-file "$1" -d --cipher-algo AES256 "$f" | tar -zxf -
+  done
+}
+
 concd () {
-  cd $(fd ".*" ~/sems/sem7 -t l -t d -E ".git" -E "__pycache__" | fzf)
+  cd $(fd ".*" ~/contests/sem7 -t l -t d -E ".git" -E "__pycache__" | fzf)
 }
 
 ccd () {
@@ -14,26 +27,40 @@ sshrc() {
   [ $# -eq 1 ] && nvim ~/.ssh/config.d/$1 || nvim ~/.ssh/config
 }
 
+waitpid() {
+  tail -f --pid=$1
+}
+
+###################| EXPORTS |###################
+#source /etc/profile.d/vte.sh
 export LC_ALL=en_US.UTF-8
 
+export SIDEQUEST="/home/demiler/.config/SideQuest/backups"
 export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
 export EDITOR=nvim
 export PATH=$PATH:"$HOME/bin":"$HOME/.local/bin"
+#export PAGER=most
 
 export ZSH="/home/demiler/.oh-my-zsh"
 
 #export TERM="xterm-256color"
 ZSH_THEME="robbyrussell"
+#ZSH_THEME="random"
+#ZSH_THEME_RANDOM_CANDIDATES=( "robbyrussell" "agnoster" )
 
+#DISABLE_AUTO_TITLE="true"
+#ENABLE_CORRECTION="true"
+#COMPLETION_WAITING_DOTS="true"
 DISABLE_UNTRACKED_FILES_DIRTY="true"
+
+#HIST_STAMPS="mm/dd/yyyy"
 
 plugins=(
   fd
   git
   zsh-syntax-highlighting
   zsh-autosuggestions
-  history-substring-search
 )
 
 # Load Git completion
@@ -44,39 +71,40 @@ autoload -Uz compinit && compinit
 source $ZSH/oh-my-zsh.sh
 
 ###################| ALIASES |###################
-alias p="ping"
-alias virsh="doas virsh"
-alias copyworkkey="cat ~/.ssh/work.pub | copy"
 alias psgrep="ps -aux | grep -v grep | grep"
-alias config='/usr/bin/git --git-dir=$HOME/dotfiles/ --work-tree=$HOME'
-alias vimrc="vim ~/.config/nvim/init.vim"
+alias bell="notify-send -a 'Shell bell' -h 'string:desktop-entry:org.kde.konsole' DONE"
 alias seczsh="ZSH_SECURE=1 zsh"
 alias ip="ip -c"
-alias workvpn="doas openvpn --config $HOME/.ovpn/demiler.ovpn"
+alias vimrc="vim ~/.config/nvim/init.vim"
 alias zshrc="vim ~/.zshrc"
+alias genpass='pwgen -1 -s 20 | tr -d "\n" | copy && echo $(copy -o)'
 alias copy="xclip -selection clipboard"
-alias paste="xclip -selection clipboard -o"
+alias paste="xclip -o -selection clipboard"
 alias vim=nvim
 alias cdb='cd ..'
-alias lt="ls -tr"
+alias config='/usr/bin/git --git-dir=$HOME/dotfiles/ --work-tree=$HOME'
+alias img='eog'
+alias ready="spd-say 'ready' -p -100 -r -50"
+alias cmd="fc -ln | tac | fzf | tr -d '\n' | copy"
+alias lt="ls -t --color=always | head"
 alias gits="git status"
 alias gitl="git --no-pager log --oneline"
 alias gitlh="gitl --color=always | head"
+alias mpva="[ ! -d .watch_later ] && mkdir .watch_later; mpv --profile=anime ."
+alias mpvc="[ -f mpv.conf ] && mpv --config-dir=. . || echo 'no mpv.conf file found'"
 alias py="python3"
 alias npy="py -i -c'import numpy as np'"
 alias pdf="zathura"
+alias hrsync="rsync -rh --info=progress2 --no-i-r"
+
 ###################| VIM MODE |###################
 bindkey -v #enable vim mode
-
 bindkey '^P' up-history
 bindkey '^N' down-history
 bindkey '^?' backward-delete-char
 bindkey '^h' backward-delete-char
 bindkey '^w' backward-kill-word
 bindkey '^r' history-incremental-search-backward
-bindkey '^s' history-incremental-search-forward
-bindkey '^[[A' history-substring-search-up
-bindkey '^[[B' history-substring-search-down
 
 #vim_ins_mode="%{%F{37}%}[I]%f%}"
 #vim_cmd_mode="%{%F{41}%}[N]%f%}"
@@ -99,6 +127,12 @@ zle -N zle-keymap-select
 
 export KEYTIMEOUT=1
 
+if [ -n "$SSH_CLIENT" ] || [ -n "$SSH_TTY" ]; then
+  PRCH=">"
+else
+  PRCH="❯"
+fi
+
 if [ ! -z $ZSH_SECURE ]; then
   tmpHistFile=$(mktemp)
   cat $HISTFILE > $tmpHistFile
@@ -108,13 +142,10 @@ if [ ! -z $ZSH_SECURE ]; then
   SEC_PROMPT="%F{240}[secure] %f"
 fi
 
-# another prompt symbol ❯
 #%F{37} - green color
 #%F{41} - blue color
 #PROMPT='${vim_mode} %B%F{104}%c%f%b $(git_prompt_info)%(?:%F{208}❯%f :%F{196}❯%f )'
-PROMPT='$SEC_PROMPT%F{240}@seamoth %f%B%F{104}%c%f%b $(git_prompt_info)%(?:%F{208}\$%f :%F{196}\$%f )'
+PROMPT='$SEC_PROMPT%B%F{104}%c%f%b $(git_prompt_info)%(?:%F{208}$PRCH%f :%F{196}❯%f )'
 
 #[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-
 export FZF_DEFAULT_OPTS='--layout=reverse --extended'
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion

@@ -150,4 +150,10 @@ let g:airline_symbols.colnr = ': '
 "highlight thing inside css`...` too
 let g:htl_css_templates = 1
 
+let g:syntastic_mode_map = {
+    \ "mode": "active",
+    \ "active_filetypes": ["ruby", "php"],
+    \ "passive_filetypes": ["cpp"] }
+
 syntax spell toplevel
+set mouse=

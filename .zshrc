@@ -44,6 +44,8 @@ autoload -Uz compinit && compinit
 source $ZSH/oh-my-zsh.sh
 
 ###################| ALIASES |###################
+alias p="ping"
+alias virsh="doas virsh"
 alias copyworkkey="cat ~/.ssh/work.pub | copy"
 alias psgrep="ps -aux | grep -v grep | grep"
 alias config='/usr/bin/git --git-dir=$HOME/dotfiles/ --work-tree=$HOME'

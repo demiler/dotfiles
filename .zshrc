@@ -32,29 +32,15 @@ waitpid() {
 }
 
 ###################| EXPORTS |###################
-#source /etc/profile.d/vte.sh
 export LC_ALL=en_US.UTF-8
-
-export SIDEQUEST="/home/demiler/.config/SideQuest/backups"
 export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
 export EDITOR=nvim
 export PATH=$PATH:"$HOME/bin":"$HOME/.local/bin"
-#export PAGER=most
 
 export ZSH="/home/demiler/.oh-my-zsh"
-
-#export TERM="xterm-256color"
 ZSH_THEME="robbyrussell"
-#ZSH_THEME="random"
-#ZSH_THEME_RANDOM_CANDIDATES=( "robbyrussell" "agnoster" )
-
-#DISABLE_AUTO_TITLE="true"
-#ENABLE_CORRECTION="true"
-#COMPLETION_WAITING_DOTS="true"
 DISABLE_UNTRACKED_FILES_DIRTY="true"
-
-#HIST_STAMPS="mm/dd/yyyy"
 
 plugins=(
   fd
@@ -142,10 +128,7 @@ if [ ! -z $ZSH_SECURE ]; then
   SEC_PROMPT="%F{240}[secure] %f"
 fi
 
-#%F{37} - green color
-#%F{41} - blue color
-#PROMPT='${vim_mode} %B%F{104}%c%f%b $(git_prompt_info)%(?:%F{208}❯%f :%F{196}❯%f )'
-PROMPT='$SEC_PROMPT%B%F{104}%c%f%b $(git_prompt_info)%(?:%F{208}$PRCH%f :%F{196}❯%f )'
+PROMPT='%F{240}@%m $SEC_PROMPT%B%F{104}%c%f%b $(git_prompt_info)%(?:%F{208}$PRCH%f :%F{196}❯%f )'
 
 #[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 export FZF_DEFAULT_OPTS='--layout=reverse --extended'
